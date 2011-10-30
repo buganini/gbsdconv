@@ -1,19 +1,38 @@
 #!/usr/bin/env python
 
+import bsdconv
 from gi.repository import Gtk
 
 class gBsdConv(object):       
 	def __init__(self):
-		builder = Gtk.Builder()
+		self.builder = builder = Gtk.Builder()
 		builder.add_from_file("gbsdconv.xml")
 		self.window = builder.get_object("main_window")
-		self.window.connect('destroy', Gtk.main_quit)
+		self.window.connect("destroy", Gtk.main_quit)
 
 		zh_maps_list = builder.get_object("zh_maps_list")
 		zh_maps_list.append_text('None')
 		zh_maps_list.set_active(0)
 
+		text_convert = builder.get_object("text_convert")
+		text_convert.connect("clicked", self.text_cb)
+
 		self.window.show()
+
+	def text_cb(self, obj):
+		builder = self.builder
+		c=self.bsdconv()
+		if not c:
+			del c
+			return
+		i=builder.get_object("text_in").get_buffer()
+		o=builder.get_object("text_out").get_buffer()
+		o.set_text(i.get_text(i.get_start_iter(), i.get_end_iter(), 0))
+		o.set_text(c.conv(i.get_text(i.get_start_iter(), i.get_end_iter(), 0)))
+		del c
+
+	def bsdconv(self):
+		return bsdconv.new(self.builder.get_object("conversion").get_text())
 
 if __name__ == "__main__":
 	app = gBsdConv()
