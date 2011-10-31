@@ -292,18 +292,6 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="label26">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                  </object>
-                  <packing>
-                    <property name="left_attach">0</property>
-                    <property name="top_attach">3</property>
-                    <property name="width">1</property>
-                    <property name="height">1</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkComboBox" id="from_codecs">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
@@ -353,10 +341,21 @@
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>
                     <child>
+                      <object class="GtkLabel" id="label12">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">From/To encoding shoud follow your locale setting.</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkBox" id="box5">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="spacing">1</property>
                         <property name="homogeneous">True</property>
                         <child>
                           <object class="GtkScrolledWindow" id="scrolledwindow1">
@@ -399,7 +398,7 @@
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
-                        <property name="position">0</property>
+                        <property name="position">1</property>
                       </packing>
                     </child>
                     <child>
@@ -448,7 +447,7 @@
                         <property name="expand">False</property>
                         <property name="fill">True</property>
                         <property name="padding">2</property>
-                        <property name="position">1</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
                   </object>
@@ -876,7 +875,6 @@
           <object class="GtkStatusbar" id="status">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="spacing">2</property>
           </object>
           <packing>
             <property name="expand">False</property>
