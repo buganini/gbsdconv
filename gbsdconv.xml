@@ -12,7 +12,7 @@
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkNotebook" id="notebook1">
+          <object class="GtkNotebook" id="main_tabs">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="tab_pos">left</property>
@@ -25,6 +25,7 @@
                   <object class="GtkFileChooserWidget" id="item_chooser">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
+                    <property name="create_folders">False</property>
                     <property name="select_multiple">True</property>
                   </object>
                   <packing>
@@ -90,8 +91,8 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="button4">
-                        <property name="label" translatable="yes">Remove</property>
+                      <object class="GtkButton" id="item_remove">
+                        <property name="label" translatable="yes">Recursively Remove</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -105,21 +106,6 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="button9">
-                        <property name="label" translatable="yes">Recursively Remove</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">5</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkFixed" id="fixed3">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -127,7 +113,7 @@
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
-                        <property name="position">6</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                   </object>
@@ -175,7 +161,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkBox" id="box16">
+              <object class="GtkBox" id="conversion_page">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
@@ -423,7 +409,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkNotebook" id="notebook2">
+              <object class="GtkNotebook" id="operation_tabs">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>
@@ -505,7 +491,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkBox" id="box7">
+                  <object class="GtkBox" id="operation_naming_page">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="orientation">vertical</property>

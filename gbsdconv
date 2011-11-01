@@ -14,6 +14,12 @@ class gBsdConv(object):
 		#Global objects
 		self.items = Gtk.TreeStore(str)
 
+		main_tabs = builder.get_object("main_tabs")
+		main_tabs.connect("switch-page", self.main_tabs_cb)
+
+		operation_tabs = builder.get_object("operation_tabs")
+		operation_tabs.connect("switch-page", self.operation_tabs_cb)
+
 		#Items tab
 		items = builder.get_object("items")
 		renderer = Gtk.CellRendererText()
@@ -66,7 +72,6 @@ class gBsdConv(object):
 		renderer = Gtk.CellRendererText()
 		column = Gtk.TreeViewColumn("Path", renderer, text=0)
 		naming_result.append_column(column)
-		naming_result.set_model(self.items)
 
 		#+Content tab
 		content_items = builder.get_object("content_items")
@@ -80,6 +85,17 @@ class gBsdConv(object):
 
 		#launch
 		self.window.show()
+
+	#Callbacks
+	def main_tabs_cb(self, notebook, page, pagen):
+		if page==self.builder.get_object("conversion_page"):
+			self.converter = None
+		else:
+			self.converter = Bsdconv(self.builder.get_object("conversion").get_text())
+		operation_tabs = self.builder.get_object("operation_tabs")
+		operation_curr_page = operation_tabs.get_nth_page(operation_tabs.get_current_page())
+		if page == operation_tabs and operation_curr_page == self.builder.get_object("operation_naming_page"):
+			self.naming_cb()
 
 	#Callbacks for items tab
 	def item_add_cb(self, obj):
@@ -143,16 +159,33 @@ class gBsdConv(object):
 	#+Text
 	def text_cb(self, obj):
 		builder = self.builder
-		c=self.bsdconv()
-		if not c:
-			del c
+		if not self.converter:
 			return
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
 		o.set_text(cnt)
-		o.set_text(c.conv(cnt))
-		del c
+		o.set_text(self.converter.conv(cnt))
+
+	#+Naming
+	def operation_tabs_cb(self, notebook, page, pagen):
+		if page == self.builder.get_object("operation_naming_page"):
+			self.naming_cb()
+
+	def naming_cb(self):
+		naming_result = self.builder.get_object("naming_result")
+		naming_result_store = Gtk.TreeStore(str)
+		naming_result.set_model(naming_result_store)
+
+		self.naming_cb_r(naming_result_store, None)
+
+	def naming_cb_r(self, store, parent):
+		curr = self.items.iter_children(parent)
+		while curr != None:
+			store.append(parent, [self.converter.conv(self.items[curr][0])])
+			if store.iter_has_child(curr):
+				self.naming_cb_r(store, curr)
+			curr = self.items.iter_next(curr)
 
 	#+Content
 	def content_items_select_cb(self, obj):
@@ -165,12 +198,9 @@ class gBsdConv(object):
 				cnt=f.read()
 				builder.get_object("content_origin").get_buffer().set_text(cnt)
 				f.close()
-				c=self.bsdconv()
-				if not c:
-					del c
+				if not self.converter:
 					return
-				builder.get_object("content_result").get_buffer().set_text(c.conv(cnt))
-				del c
+				builder.get_object("content_result").get_buffer().set_text(self.converter.conv(cnt))
 
 	#helper
 	def getFullPath(self, model, ti):
@@ -179,10 +209,7 @@ class gBsdConv(object):
 			ret.insert(0, model[ti][0])
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
-		
 
-	def bsdconv(self):
-		return Bsdconv(self.builder.get_object("conversion").get_text())
 
 if __name__ == "__main__":
 	app = gBsdConv()
