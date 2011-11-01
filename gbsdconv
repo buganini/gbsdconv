@@ -10,26 +10,131 @@ class gBsdConv(object):
 		self.window = builder.get_object("main_window")
 		self.window.connect("destroy", Gtk.main_quit)
 
+		#Global objects
+		self.items = Gtk.TreeStore(str)
+
+		#Items tab
+		items = builder.get_object("items")
+		renderer = Gtk.CellRendererText()
+		column = Gtk.TreeViewColumn("Path", renderer, text=0)
+		items.append_column(column)
+		items.set_model(self.items)
+
+		text_convert = builder.get_object("item_add")
+		text_convert.connect("clicked", self.item_add_cb)
+
+		text_convert = builder.get_object("item_add_r")
+		text_convert.connect("clicked", self.item_add_cb)
+
+		#Conversion tab
+		from_codecs = builder.get_object("from_codecs")
+		for codec in ['UTF-8,ASCII','BIG5,ASCII','GBK,ASCII','ISO-8859-1,ASCII']:
+			from_codecs.append_text(codec)
+		from_codecs.set_active(0)
+
+		to_codecs = builder.get_object("to_codecs")
+		for codec in ['UTF-8,ASCII','BIG5,ASCII','GBK,ASCII','ISO-8859-1,ASCII']:
+			to_codecs.append_text(codec)
+		to_codecs.set_active(0)
+
 		zh_maps_list = builder.get_object("zh_maps_list")
 		zh_maps_list.append_text('None')
 		zh_maps_list.set_active(0)
 
-		text_convert = builder.get_object("text_convert")
-		text_convert.connect("clicked", self.text_cb)
+		builder.get_object("chk_ignoring_whitespace").set_active(True)
 
+		text_convert = builder.get_object("conversion_generate")
+		text_convert.connect("clicked", self.generate_cb)
+
+		#Operation tab
+		#+Text tab
+		text_origin_buffer = builder.get_object("text_origin").get_buffer()
+		text_origin_buffer.connect("changed", self.text_cb)
+
+		#+Naming tab
+		naming_origin = builder.get_object("naming_origin")
+		renderer = Gtk.CellRendererText()
+		column = Gtk.TreeViewColumn("Path", renderer, text=0)
+		naming_origin.append_column(column)
+		naming_origin.set_model(self.items)
+
+		naming_result = builder.get_object("naming_result")
+		renderer = Gtk.CellRendererText()
+		column = Gtk.TreeViewColumn("Path", renderer, text=0)
+		naming_result.append_column(column)
+		naming_result.set_model(self.items)
+
+		#+Content tab
+		content_items = builder.get_object("content_items")
+		renderer = Gtk.CellRendererText()
+		column = Gtk.TreeViewColumn("Path", renderer, text=0)
+		content_items.append_column(column)
+		content_items.set_model(self.items)
+
+		content_items_select = content_items.get_selection()
+		content_items_select.connect("changed", self.content_items_select_cb)
+
+		#launch
 		self.window.show()
 
+	#Callbacks for items tab
+	def item_add_cb(self, obj):
+		builder = self.builder
+		for path in builder.get_object("item_chooser").get_filenames():
+			self.items.append(None, [path])
+
+	#Callbacks for conversion tab
+	def generate_cb(self, obj):
+		conversion=[]
+		builder = self.builder
+
+		conversion.append(builder.get_object("from_codecs").get_active_text())
+
+		ignoring_whitespaces=builder.get_object("chk_ignoring_whitespace")
+
+		if ignoring_whitespaces.get_active():
+			conversion.append('WHITESPACE-DERAIL')
+
+		if ignoring_whitespaces.get_active():
+			conversion.append('WHITESPACE-RERAIL')
+
+		conversion.append(builder.get_object("to_codecs").get_active_text())
+
+		print builder.get_object("to_codecs")
+		print conversion
+		builder.get_object("conversion").set_text(':'.join(conversion))
+
+	#Callbacks for operation tab
+	#+Text
 	def text_cb(self, obj):
 		builder = self.builder
 		c=self.bsdconv()
 		if not c:
 			del c
 			return
-		i=builder.get_object("text_in").get_buffer()
-		o=builder.get_object("text_out").get_buffer()
-		o.set_text(i.get_text(i.get_start_iter(), i.get_end_iter(), 0))
-		o.set_text(c.conv(i.get_text(i.get_start_iter(), i.get_end_iter(), 0)))
+		i=builder.get_object("text_origin").get_buffer()
+		o=builder.get_object("text_result").get_buffer()
+		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
+		o.set_text(cnt)
+		o.set_text(c.conv(cnt))
 		del c
+
+	#+Content
+	def content_items_select_cb(self, obj):
+		builder = self.builder
+		model, treeiter = obj.get_selected()
+		if treeiter != None:
+			filename = model[treeiter][0]
+			f=open(filename,'r')
+			cnt=f.read()
+			builder.get_object("content_origin").get_buffer().set_text(cnt)
+			f.close()
+			c=self.bsdconv()
+			if not c:
+				del c
+				return
+			builder.get_object("content_result").get_buffer().set_text(c.conv(cnt))
+			del c
 
 	def bsdconv(self):
 		return Bsdconv(self.builder.get_object("conversion").get_text())
