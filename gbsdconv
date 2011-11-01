@@ -90,7 +90,7 @@ class gBsdConv(object):
 			sparent = self.items.append(parent, [path])
 		if recur and os.path.isdir(path):
 			for spath in os.listdir(path):
-				self.item_add_cb_r(sparent, spath, recur)
+				self.item_add_cb_r(sparent, os.path.join(path, spath), recur)
 
 	#Callbacks for conversion tab
 	def generate_cb(self, obj):
