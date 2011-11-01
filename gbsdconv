@@ -83,14 +83,32 @@ class gBsdConv(object):
 		builder = self.builder
 		recur = obj==builder.get_object("item_add_r")
 		for path in builder.get_object("item_chooser").get_filenames():
-			self.item_add_cb_r(None, path, recur)
+			self.item_add_cb_r(path, recur)
 		
-	def item_add_cb_r(self, parent, path, recur):
+	def item_add_cb_r(self, path, recur):
 		if [path] not in self.items: #XXX
-			sparent = self.items.append(parent, [path])
+			self.item_add_cb_sub(path)
 		if recur and os.path.isdir(path):
 			for spath in os.listdir(path):
-				self.item_add_cb_r(sparent, os.path.join(path, spath), recur)
+				self.item_add_cb_r(os.path.join(path, spath), recur)
+
+	def item_add_cb_sub(self, path):
+		a=[path]
+		while len(a[0])>1:
+			t=a.pop(0)
+			p, q = os.path.split(t)
+			a.insert(0, q)
+			a.insert(0, p)
+		parent = None
+		for p in a:
+			curr = self.items.iter_children(parent)
+			while curr != None:
+				if p==self.items[curr][0]:
+					parent = curr
+					break
+				curr = self.items.iter_next(curr)
+			if curr == None:
+				parent = self.items.append(parent, [p])
 
 	#Callbacks for conversion tab
 	def generate_cb(self, obj):
