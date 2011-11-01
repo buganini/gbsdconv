@@ -21,11 +21,14 @@ class gBsdConv(object):
 		items.append_column(column)
 		items.set_model(self.items)
 
-		text_convert = builder.get_object("item_add")
-		text_convert.connect("clicked", self.item_add_cb)
+		item_add = builder.get_object("item_add")
+		item_add.connect("clicked", self.item_add_cb)
 
-		text_convert = builder.get_object("item_add_r")
-		text_convert.connect("clicked", self.item_add_cb)
+		item_add_r = builder.get_object("item_add_r")
+		item_add_r.connect("clicked", self.item_add_cb)
+
+		item_remove = builder.get_object("item_remove")
+		item_remove.connect("clicked", self.item_remove_cb)
 
 		#Conversion tab
 		from_codecs = builder.get_object("from_codecs")
@@ -109,6 +112,11 @@ class gBsdConv(object):
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				parent = self.items.append(parent, [p])
+
+	def item_remove_cb(self, obj):
+		builder = self.builder
+		model, treeiter = builder.get_object("items").get_selection().get_selected()
+		model.remove(treeiter)
 
 	#Callbacks for conversion tab
 	def generate_cb(self, obj):
