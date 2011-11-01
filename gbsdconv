@@ -9,7 +9,7 @@ class gBsdConv(object):
 		self.builder = builder = Gtk.Builder()
 		builder.add_from_file("gbsdconv.xml")
 		self.window = builder.get_object("main_window")
-		self.window.connect("destroy", Gtk.main_quit)
+		self.window.connect("delete-event", Gtk.main_quit)
 
 		#Global objects
 		self.items = Gtk.TreeStore(str)
