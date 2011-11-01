@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 from bsdconv import Bsdconv
 from gi.repository import Gtk
 
@@ -80,8 +81,16 @@ class gBsdConv(object):
 	#Callbacks for items tab
 	def item_add_cb(self, obj):
 		builder = self.builder
+		recur = obj==builder.get_object("item_add_r")
 		for path in builder.get_object("item_chooser").get_filenames():
-			self.items.append(None, [path])
+			self.item_add_cb_r(None, path, recur)
+		
+	def item_add_cb_r(self, parent, path, recur):
+		if [path] not in self.items: #XXX
+			sparent = self.items.append(parent, [path])
+		if recur and os.path.isdir(path):
+			for spath in os.listdir(path):
+				self.item_add_cb_r(sparent, spath, recur)
 
 	#Callbacks for conversion tab
 	def generate_cb(self, obj):
