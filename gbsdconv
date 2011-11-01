@@ -151,17 +151,27 @@ class gBsdConv(object):
 		builder = self.builder
 		model, treeiter = obj.get_selected()
 		if treeiter != None:
-			filename = model[treeiter][0]
-			f=open(filename,'r')
-			cnt=f.read()
-			builder.get_object("content_origin").get_buffer().set_text(cnt)
-			f.close()
-			c=self.bsdconv()
-			if not c:
+			filename = self.getFullPath(model, treeiter)
+			if os.path.isfile(filename):
+				f=open(filename,'r')
+				cnt=f.read()
+				builder.get_object("content_origin").get_buffer().set_text(cnt)
+				f.close()
+				c=self.bsdconv()
+				if not c:
+					del c
+					return
+				builder.get_object("content_result").get_buffer().set_text(c.conv(cnt))
 				del c
-				return
-			builder.get_object("content_result").get_buffer().set_text(c.conv(cnt))
-			del c
+
+	#helper
+	def getFullPath(self, model, ti):
+		ret=[]
+		while ti!=None:
+			ret.insert(0, model[ti][0])
+			ti = model.iter_parent(ti)
+		return os.path.join(*ret)
+		
 
 	def bsdconv(self):
 		return Bsdconv(self.builder.get_object("conversion").get_text())
