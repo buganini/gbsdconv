@@ -12,7 +12,7 @@ class gBsdConv(object):
 		self.window.connect("delete-event", Gtk.main_quit)
 
 		#Global objects
-		self.converter = Bsdconv("")
+		self.converter = Bsdconv("byte:byte")
 		self.items = Gtk.TreeStore(str)
 
 		main_tabs = builder.get_object("main_tabs")
