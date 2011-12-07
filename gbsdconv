@@ -14,7 +14,7 @@ class gBsdConv(object):
 
 		#Global objects
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(str)
+		self.items = Gtk.TreeStore(str, bool)
 		self.inter_codecs = {}
 
 		main_tabs = builder.get_object("main_tabs")
@@ -137,7 +137,8 @@ class gBsdConv(object):
 			a.insert(0, q)
 			a.insert(0, p)
 		parent = None
-		for p in a:
+		for i in xrange(0, len(a)):
+			p=a[i]
 			curr = self.items.iter_children(parent)
 			while curr != None:
 				if p==self.items[curr][0]:
@@ -145,7 +146,10 @@ class gBsdConv(object):
 					break
 				curr = self.items.iter_next(curr)
 			if curr == None:
-				parent = self.items.append(parent, [p])
+				if i==len(a)-1:
+					parent = self.items.append(parent, [p, True])
+				else:
+					parent = self.items.append(parent, [p, False])
 
 	def item_remove_cb(self, obj):
 		builder = self.builder
@@ -208,7 +212,10 @@ class gBsdConv(object):
 	def naming_cb_r(self, store, fparent, tparent):
 		fcurr = self.items.iter_children(fparent)
 		while fcurr != None:
-			tcurr = store.append(tparent, [self.converter.conv(self.items[fcurr][0])])
+			if self.items[fcurr][1]:
+				tcurr = store.append(tparent, [self.converter.conv(self.items[fcurr][0])])
+			else:
+				tcurr = store.append(tparent, [self.items[fcurr][0]])
 			if self.items.iter_has_child(fcurr):
 				self.naming_cb_r(store, fcurr, tcurr)
 			fcurr = self.items.iter_next(fcurr)
