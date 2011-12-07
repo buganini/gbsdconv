@@ -123,6 +123,9 @@ class gBsdConv(object):
 		for path in builder.get_object("item_chooser").get_filenames():
 			self.item_add_cb_r(path, recur)
 
+		builder.get_object("items").expand_all()
+		builder.get_object("content_items").expand_all()
+
 	def item_add_cb_r(self, path, recur):
 		self.item_add_cb_sub(path)
 		if recur and os.path.isdir(path):
@@ -208,6 +211,9 @@ class gBsdConv(object):
 		naming_result.set_model(naming_result_store)
 
 		self.naming_cb_r(naming_result_store, None, None)
+
+		naming_result.expand_all()
+		self.builder.get_object("naming_origin").expand_all()
 
 	def naming_cb_r(self, store, fparent, tparent):
 		fcurr = self.items.iter_children(fparent)
