@@ -70,11 +70,10 @@ class gBsdConv(object):
 		conversion_apply.connect("clicked", self.conversion_apply_cb)
 
 		#+List
-		codecs=codecs_list()
-
 		for t in ("from","inter","to"):
 			_list = builder.get_object("%s_codecs_list" % t)
-			for codec in codecs[t]:
+			codecs=codecs_list({"from": FROM, "inter": INTER, "to": TO}[t])
+			for codec in codecs:
 				t = Gtk.Button(codec)
 				t.connect("clicked", self.codecs_list_cb)
 				_list.pack_start(t, False, True, 0)
