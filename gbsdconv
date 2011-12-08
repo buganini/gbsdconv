@@ -14,7 +14,7 @@ class gBsdConv(object):
 
 		#Global objects
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(str, bool)
+		self.items = Gtk.TreeStore(int, str, bool)
 		self.inter_codecs = {}
 
 		main_tabs = builder.get_object("main_tabs")
@@ -25,7 +25,10 @@ class gBsdConv(object):
 
 		#Items tab
 		items = builder.get_object("items")
-		items.append_column(Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=0))
+		items.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
+		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=1)
+		items.append_column(items_path)
+		items.set_expander_column(items_path)
 		items.set_model(self.items)
 
 		item_add = builder.get_object("item_add")
@@ -86,21 +89,25 @@ class gBsdConv(object):
 
 		#+Naming tab
 		naming_origin = builder.get_object("naming_origin")
+		naming_origin.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
 		renderer = Gtk.CellRendererText()
-		column = Gtk.TreeViewColumn("Path", renderer, text=0)
-		naming_origin.append_column(column)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		naming_origin.append_column(items_path)
+		naming_origin.set_expander_column(items_path)
 		naming_origin.set_model(self.items)
 
 		naming_result = builder.get_object("naming_result")
-		renderer = Gtk.CellRendererText()
-		column = Gtk.TreeViewColumn("Path", renderer, text=0)
-		naming_result.append_column(column)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		naming_result.append_column(items_path)
+		naming_result.set_expander_column(items_path)
 
 		#+Content tab
 		content_items = builder.get_object("content_items")
+		content_items.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
 		renderer = Gtk.CellRendererText()
-		column = Gtk.TreeViewColumn("Path", renderer, text=0)
-		content_items.append_column(column)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		content_items.append_column(items_path)
+		content_items.set_expander_column(items_path)
 		content_items.set_model(self.items)
 
 		content_items_select = content_items.get_selection()
@@ -144,20 +151,20 @@ class gBsdConv(object):
 			p=a[i]
 			curr = self.items.iter_children(parent)
 			while curr != None:
-				if p==self.items[curr][0]:
+				if p==self.items[curr][1]:
 					parent = curr
 					break
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
-					parent = self.items.append(parent, [p, True])
+					parent = self.items.append(parent, [1, p, True])
 				else:
-					parent = self.items.append(parent, [p, False])
+					parent = self.items.append(parent, [-1, p, False])
 
 	def item_remove_cb(self, obj):
-		builder = self.builder
-		model, treeiter = builder.get_object("items").get_selection().get_selected()
-		model.remove(treeiter)
+		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
+		if treeiter:
+			model.remove(treeiter)
 
 	#Callbacks for conversion tab
 	def generate_cb(self, obj):
@@ -207,7 +214,7 @@ class gBsdConv(object):
 		if not self.converter:
 			return
 		naming_result = self.builder.get_object("naming_result")
-		naming_result_store = Gtk.TreeStore(str)
+		naming_result_store = Gtk.TreeStore(int, str)
 		naming_result.set_model(naming_result_store)
 
 		self.naming_cb_r(naming_result_store, None, None)
@@ -218,10 +225,10 @@ class gBsdConv(object):
 	def naming_cb_r(self, store, fparent, tparent):
 		fcurr = self.items.iter_children(fparent)
 		while fcurr != None:
-			if self.items[fcurr][1]:
-				tcurr = store.append(tparent, [self.converter.conv(self.items[fcurr][0])])
+			if self.items[fcurr][0] and self.items[fcurr][2]:
+				tcurr = store.append(tparent, [1, self.converter.conv(self.items[fcurr][1])])
 			else:
-				tcurr = store.append(tparent, [self.items[fcurr][0]])
+				tcurr = store.append(tparent, [-1, self.items[fcurr][1]])
 			if self.items.iter_has_child(fcurr):
 				self.naming_cb_r(store, fcurr, tcurr)
 			fcurr = self.items.iter_next(fcurr)
@@ -242,6 +249,24 @@ class gBsdConv(object):
 				builder.get_object("content_result").get_buffer().set_text(self.converter.conv(cnt))
 
 	#helper
+	def items_toggle_render_cb(self, column, cell, model, iter, arg):
+		if self.items[iter][0]==-1:
+			cell.set_visible(False)
+		else:
+			cell.set_visible(True)
+			if self.items[iter][0]==0:
+				cell.set_active(False)
+			else:
+				cell.set_active(True)
+			cell.connect("toggled", self.items_toggle_cb)
+
+	def items_toggle_cb(self, renderer, path):
+		iter=self.items.get_iter(path)
+		if self.items[iter][0]:
+			self.items[iter][0]=0
+		else:
+			self.items[iter][0]=1
+
 	def getFullPath(self, model, ti):
 		ret=[]
 		while ti!=None:
