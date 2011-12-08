@@ -41,46 +41,27 @@ class gBsdConv(object):
 		item_remove.connect("clicked", self.item_remove_cb)
 
 		#Conversion tab
-		#+Express
-		#++from
-		from_codecs = builder.get_object("from_codecs")
-		for codec in ['UTF-8,ASCII','BIG5,ASCII','GBK,ASCII','ISO-8859-1,ASCII']:
-			from_codecs.append_text(codec)
-		from_codecs.set_active(0)
+		self.from_codecs = Gtk.ListStore(str)
+		self.inter_codecs = Gtk.ListStore(str)
+		self.to_codecs = Gtk.ListStore(str)
 
-		#++inter
-		inter_codecs = builder.get_object("inter_codecs")
-		for text, codecs in [
-			["Ignoring Whitespaces", ["WHITESPACE-DERAIL","WHITESPACE-RERAIL"]],
-			["Trad", ["ZHTW", "ZHTW_WORDS"]],
-			["Sim", ["ZHCN"]],
-		]:
-			t = Gtk.CheckButton(text)
-			self.inter_codecs[text]=t
-			inter_codecs.pack_start(t, False, True, 0)
-			t.show()
-
-		#++to
-		to_codecs = builder.get_object("to_codecs")
-		for codec in ['UTF-8,ASCII','BIG5,ASCII','GBK,ASCII','ISO-8859-1,ASCII']:
-			to_codecs.append_text(codec)
-		to_codecs.set_active(0)
+		codecs=codecs_list(FROM)
+		for codec in codecs:
+			self.from_codecs.append([codec])
+		codecs=codecs_list(INTER)
+		for codec in codecs:
+			self.inter_codecs.append([codec])
+		codecs=codecs_list(TO)
+		for codec in codecs:
+			self.to_codecs.append([codec])
 
 		text_convert = builder.get_object("conversion_generate")
 		text_convert.connect("clicked", self.generate_cb)
 
-		conversion_apply = builder.get_object("conversion_apply")
-		conversion_apply.connect("clicked", self.conversion_apply_cb)
+		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
-		#+List
-		for t in ("from","inter","to"):
-			_list = builder.get_object("%s_codecs_list" % t)
-			codecs=codecs_list({"from": FROM, "inter": INTER, "to": TO}[t])
-			for codec in codecs:
-				t = Gtk.Button(codec)
-				t.connect("clicked", self.codecs_list_cb)
-				_list.pack_start(t, False, True, 0)
-				t.show()
+		builder.get_object("conversion_add").connect('clicked', self.conversion_add_cb)
+		builder.get_object("conversion_add").clicked()
 
 		#Operation tab
 		#+Text tab
@@ -193,6 +174,19 @@ class gBsdConv(object):
 	def codecs_list_cb(self, obj):
 		print obj.get_label()
 
+	def conversion_add_cb(self, obj):
+		conversion = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		conversion.set_visible(True)
+		self.builder.get_object('conversions').pack_start(conversion, True, True, 0)
+		for codecs in (self.from_codecs, self.inter_codecs, self.to_codecs):
+			obj_codecs=Gtk.ComboBox.new_with_model(codecs)
+			obj_codecs.set_visible(True)
+			conversion.pack_start(obj_codecs, True, True, 0)
+			renderer=Gtk.CellRendererText()
+			obj_codecs.pack_start(renderer, True)
+			obj_codecs.add_attribute(renderer, "text", 0)
+			obj_codecs.set_active(0)
+
 	#Callbacks for operation tab
 	#+Text
 	def text_cb(self, obj):
@@ -270,7 +264,7 @@ class gBsdConv(object):
 	def getFullPath(self, model, ti):
 		ret=[]
 		while ti!=None:
-			ret.insert(0, model[ti][0])
+			ret.insert(0, model[ti][1])
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
 
