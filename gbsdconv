@@ -120,8 +120,12 @@ class gBsdConv(object):
 	def main_tabs_cb(self, notebook, page, pagen):
 		operation_tabs = self.builder.get_object("operation_tabs")
 		operation_curr_page = operation_tabs.get_nth_page(operation_tabs.get_current_page())
-		if page == operation_tabs and operation_curr_page == self.builder.get_object("operation_naming_page"):
-			self.naming_cb()
+		if page == operation_tabs:
+			if operation_curr_page == self.builder.get_object("operation_naming_page"):
+				self.naming_cb()
+			elif operation_curr_page == self.builder.get_object("operation_content_page"):
+				self.content_cb()
+
 
 	#Callbacks for items tab
 	def item_add_cb(self, obj):
