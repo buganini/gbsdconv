@@ -171,6 +171,10 @@ class gBsdConv(object):
 
 	def conversion_apply_cb(self, obj):
 		self.converter = Bsdconv(self.builder.get_object("conversion").get_text())
+		if self.converter:
+			self.builder.get_object('status').push(0, str(self.converter))
+		else:
+			self.builder.get_object('status').push(0, error())
 
 	def codecs_list_cb(self, obj):
 		print obj.get_label()
