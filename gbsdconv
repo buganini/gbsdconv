@@ -29,7 +29,9 @@ class gBsdConv(object):
 
 		#Items tab
 		items = builder.get_object("items")
-		items.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=1)
 		items.append_column(items_path)
 		items.set_expander_column(items_path)
@@ -74,7 +76,9 @@ class gBsdConv(object):
 
 		#+Naming tab
 		naming_origin = builder.get_object("naming_origin")
-		naming_origin.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		naming_origin.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 		renderer = Gtk.CellRendererText()
 		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
 		naming_origin.append_column(items_path)
@@ -88,7 +92,9 @@ class gBsdConv(object):
 
 		#+Content tab
 		content_items = builder.get_object("content_items")
-		content_items.insert_column_with_data_func(0, "#", Gtk.CellRendererToggle(), self.items_toggle_render_cb, 0)
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 		renderer = Gtk.CellRendererText()
 		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
 		content_items.append_column(items_path)
@@ -260,7 +266,6 @@ class gBsdConv(object):
 				cell.set_active(False)
 			else:
 				cell.set_active(True)
-			cell.connect("toggled", self.items_toggle_cb)
 
 	def items_toggle_cb(self, renderer, path):
 		iter=self.items.get_iter(path)
