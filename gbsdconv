@@ -181,9 +181,9 @@ class gBsdConv(object):
 	def conversion_apply_cb(self, obj):
 		self.converter = Bsdconv(self.builder.get_object("conversion").get_text())
 		if self.converter:
-			self.builder.get_object('status').push(0, str(self.converter))
+			self.set_status(str(self.converter))
 		else:
-			self.builder.get_object('status').push(0, error())
+			self.set_status(error())
 
 	def codecs_list_cb(self, obj):
 		print obj.get_label()
@@ -257,6 +257,11 @@ class gBsdConv(object):
 				builder.get_object("content_result").get_buffer().set_text(self.localefilter.conv(self.converter.conv(cnt)))
 
 	#helper
+	def set_status(self, s):
+		status=self.builder.get_object('status')
+		status.remove_all(0)
+		status.push(0, s)
+
 	def items_toggle_render_cb(self, column, cell, model, iter, arg):
 		if self.items[iter][0]==-1:
 			cell.set_visible(False)
