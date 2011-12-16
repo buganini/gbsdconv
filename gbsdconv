@@ -15,7 +15,10 @@ class gBsdConv(object):
 
 		#Global objects
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str, bool)
+		self.items = Gtk.TreeStore(int, str)
+		#selected (0=no, 1=yes, -1=not_in_zone)
+		#basename
+		
 		self.inter_codecs = {}
 
 		main_tabs = builder.get_object("main_tabs")
@@ -139,9 +142,9 @@ class gBsdConv(object):
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
-					parent = self.items.append(parent, [1, p, True])
+					parent = self.items.append(parent, [1, p])
 				else:
-					parent = self.items.append(parent, [-1, p, False])
+					parent = self.items.append(parent, [-1, p])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -224,7 +227,7 @@ class gBsdConv(object):
 	def naming_cb_r(self, store, fparent, tparent):
 		fcurr = self.items.iter_children(fparent)
 		while fcurr != None:
-			if self.items[fcurr][0] and self.items[fcurr][2]:
+			if self.items[fcurr][0] and self.items[fcurr][0]>=0:
 				tcurr = store.append(tparent, [1, self.converter.conv(self.items[fcurr][1])])
 			else:
 				tcurr = store.append(tparent, [-1, self.items[fcurr][1]])
