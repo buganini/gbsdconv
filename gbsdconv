@@ -15,9 +15,10 @@ class gBsdConv(object):
 
 		#Global objects
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str)
+		self.items = Gtk.TreeStore(int, str, str)
 		#selected (0=no, 1=yes, -1=not_in_zone)
 		#basename
+		#info
 		
 		self.inter_codecs = {}
 
@@ -79,6 +80,7 @@ class gBsdConv(object):
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
 		naming_origin.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+
 		renderer = Gtk.CellRendererText()
 		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
 		naming_origin.append_column(items_path)
@@ -95,10 +97,17 @@ class gBsdConv(object):
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
 		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+
 		renderer = Gtk.CellRendererText()
 		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		items_path.set_expand(True)
 		content_items.append_column(items_path)
 		content_items.set_expander_column(items_path)
+
+		renderer = Gtk.CellRendererText()
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=2)
+		content_items.append_column(items_info)
+
 		content_items.set_model(self.items)
 
 		content_items_select = content_items.get_selection()
@@ -148,9 +157,9 @@ class gBsdConv(object):
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
-					parent = self.items.append(parent, [1, p])
+					parent = self.items.append(parent, [1, p, ''])
 				else:
-					parent = self.items.append(parent, [-1, p])
+					parent = self.items.append(parent, [-1, p, ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -219,6 +228,8 @@ class gBsdConv(object):
 	def operation_tabs_cb(self, notebook, page, pagen):
 		if page == self.builder.get_object("operation_naming_page"):
 			self.naming_cb()
+		elif page == self.builder.get_object("operation_content_page"):
+			self.content_cb()
 
 	def naming_cb(self):
 		if not self.converter:
@@ -235,13 +246,33 @@ class gBsdConv(object):
 	def naming_cb_r(self, store, fparent, tparent):
 		fcurr = self.items.iter_children(fparent)
 		while fcurr != None:
-			if self.items[fcurr][0] and self.items[fcurr][0]>=0:
+			if self.items[fcurr][0]>=0:
 				tcurr = store.append(tparent, [1, self.converter.conv(self.items[fcurr][1])])
 			else:
 				tcurr = store.append(tparent, [-1, self.items[fcurr][1]])
 			if self.items.iter_has_child(fcurr):
 				self.naming_cb_r(store, fcurr, tcurr)
 			fcurr = self.items.iter_next(fcurr)
+
+	def content_cb(self):
+		if not self.converter:
+			return
+		self.content_cb_r(None)
+
+	def content_cb_r(self, parent):
+		curr = self.items.iter_children(parent)
+		while curr != None:
+			if self.items[curr][0]>=0:
+				self.converter.testconv_file(self.getFullPath(self.items, curr))
+				info=self.converter.info()
+				err=info['ierr']+info['oerr']
+				if err>0:
+					self.items[curr][2]=str(err)
+				else:
+					self.items[curr][2]=''
+			if self.items.iter_has_child(curr):
+				self.content_cb_r(curr)
+			curr = self.items.iter_next(curr)
 
 	#+Content
 	def content_items_select_cb(self, obj):
