@@ -211,7 +211,9 @@ class gBsdConv(object):
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
 		o.set_text(cnt)
-		o.set_text(self.converter.conv(cnt))
+		o.set_text(self.localefilter.conv(self.converter.conv(cnt)))
+		info=self.converter.info()
+		self.set_status('ierr:%d oerr:%d' % (info['ierr'], info['oerr']))
 
 	#+Naming
 	def operation_tabs_cb(self, notebook, page, pagen):
