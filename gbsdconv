@@ -10,7 +10,7 @@ class gBsdConv(object):
 		builder.add_from_file("gbsdconv.xml")
 		self.window = builder.get_object("main_window")
 		self.window.connect("delete-event", Gtk.main_quit)
-		self.localefilter = Bsdconv('locale,3f:locale,3f')
+		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
 		builder.get_object("conversion").set_text("BYTE:BYTE")
 
 		#Global objects
@@ -195,7 +195,7 @@ class gBsdConv(object):
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
 		o.set_text(cnt)
-		o.set_text(self.localefilter.conv(self.converter.conv(cnt)))
+		o.set_text(self.utf8er.conv(self.converter.conv(cnt)))
 		info=self.converter.info()
 		self.set_status('ierr:%d oerr:%d' % (info['ierr'], info['oerr']))
 
@@ -301,11 +301,11 @@ class gBsdConv(object):
 			if os.path.isfile(filename):
 				f=open(filename,'r')
 				cnt=f.read()
-				builder.get_object("content_origin").get_buffer().set_text(self.localefilter.conv(cnt))
+				builder.get_object("content_origin").get_buffer().set_text(self.utf8er.conv(cnt))
 				f.close()
 				if not self.converter:
 					return
-				builder.get_object("content_result").get_buffer().set_text(self.localefilter.conv(self.converter.conv(cnt)))
+				builder.get_object("content_result").get_buffer().set_text(self.utf8er.conv(self.converter.conv(cnt)))
 
 	def content_cb(self):
 		if not self.converter:
