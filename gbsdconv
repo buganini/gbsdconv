@@ -34,7 +34,7 @@ class gBsdConv(object):
 		self.const.name0=1
 		self.const.info=2
 		self.const.name2=3	#used by naming operation
-		self.const.name1=4	#name2 or name0 if there are error(s)
+		self.const.name1=4	#name2 or name0 if there are duplication or collision
 		self.const.uname0=5	#utf8er(name0)
 		self.const.uname1=6	#utf8er(name1)
 		self.const.uname2=7	#utf8er(name2)
@@ -258,6 +258,7 @@ class gBsdConv(object):
 			if self.items[curr][self.const.selected]>=0:
 				self.items[curr][self.const.name2]=self.converter.conv(self.items[curr][self.const.name0])
 				self.items[curr][self.const.uname2]=self.utf8er.conv(self.items[curr][self.const.name2])
+				self.items[curr][self.const.name1]=self.items[curr][self.const.name2]
 				info_text=''
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
@@ -265,9 +266,6 @@ class gBsdConv(object):
 				newpath = self.getFullNewPath(self.items, curr)
 				if os.path.exists(newpath):
 					info_text+='D'
-				if info_text=='':
-					self.items[curr][self.const.name1]=self.items[curr][self.const.name2]
-				else:
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
 				self.items[curr][self.const.info]=info_text
