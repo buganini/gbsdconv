@@ -18,11 +18,12 @@ class gBsdConv(object):
 		self.err_counter = 0
 		self.err_counter_selected = 0
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str, str, str)
+		self.items = Gtk.TreeStore(int, str, str, str, str)
 		#selected (0=no, 1=yes, -1=not_in_zone)
 		#basename
 		#info
 		#basename2 (used by naming operation)
+		#basename2 or basename if there are error(s)
 		
 		self.inter_codecs = {}
 
@@ -105,9 +106,9 @@ class gBsdConv(object):
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
-					parent = self.items.append(parent, [1, p, '', ''])
+					parent = self.items.append(parent, [1, p, '', '', ''])
 				else:
-					parent = self.items.append(parent, [-1, p, '', ''])
+					parent = self.items.append(parent, [-1, p, '', '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -240,7 +241,7 @@ class gBsdConv(object):
 		curr = self.items.iter_children(parent)
 		while curr != None:
 			if self.items[curr][0]>=0:
-				self.items[curr][3]=self.localefilter.conv(self.converter.conv(self.items[curr][1]))
+				self.items[curr][3]=self.converter.conv(self.items[curr][1])
 				info_text=''
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
@@ -248,6 +249,10 @@ class gBsdConv(object):
 				newpath = self.getFullNewPath(self.items, curr)
 				if os.path.exists(newpath):
 					info_text+='D'
+				if info_text=='':
+					self.items[curr][4]=self.items[curr][3]
+				else:
+					self.items[curr][4]=self.items[curr][1]
 				self.items[curr][2]=info_text
 			if self.items.iter_has_child(curr):
 				self.naming_cb_r(curr)
@@ -260,7 +265,7 @@ class gBsdConv(object):
 		ret.insert(0, model[ti][3])
 		ti = model.iter_parent(ti)
 		while ti!=None:
-			ret.insert(0, model[ti][1])
+			ret.insert(0, model[ti][4])
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
 
