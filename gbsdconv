@@ -14,6 +14,7 @@ class gBsdConv(object):
 		builder.get_object("conversion").set_text("BYTE:BYTE")
 
 		#Global objects
+		self.counter = 0
 		self.err_counter = 0
 		self.err_counter_selected = 0
 		self.converter = Bsdconv("BYTE:BYTE")
@@ -114,6 +115,8 @@ class gBsdConv(object):
 
 		content_items_select = content_items.get_selection()
 		content_items_select.connect("changed", self.content_items_select_cb)
+
+		builder.get_object('content_convert').connect('clicked', self.content_convert)
 
 		#launch
 		self.window.show()
@@ -281,7 +284,7 @@ class gBsdConv(object):
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
-		self.set_status('Error: %d Selected: %d' % (self.err_counter, self.err_counter_selected))
+		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def content_cb_r(self, parent):
 		curr = self.items.iter_children(parent)
@@ -299,6 +302,24 @@ class gBsdConv(object):
 					self.items[curr][2]=''
 			if self.items.iter_has_child(curr):
 				self.content_cb_r(curr)
+			curr = self.items.iter_next(curr)
+
+	def content_convert(self, obj):
+		if not self.converter:
+			return
+		self.counter=0
+		self.content_convert_r(None)
+		self.set_status('%d files converted' % self.counter)
+		
+	def content_convert_r(self, parent):
+		curr = self.items.iter_children(parent)
+		while curr != None:
+			if self.items[curr][0]>0:
+				fpath=self.getFullPath(self.items, curr)
+				self.converter.conv_file(fpath, fpath)
+				self.counter+=1
+			if self.items.iter_has_child(curr):
+				self.content_convert_r(curr)
 			curr = self.items.iter_next(curr)
 
 	#helper
