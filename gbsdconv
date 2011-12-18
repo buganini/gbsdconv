@@ -18,10 +18,11 @@ class gBsdConv(object):
 		self.err_counter = 0
 		self.err_counter_selected = 0
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str, str)
+		self.items = Gtk.TreeStore(int, str, str, str)
 		#selected (0=no, 1=yes, -1=not_in_zone)
 		#basename
 		#info
+		#basename2 (used by naming operation)
 		
 		self.inter_codecs = {}
 
@@ -79,21 +80,28 @@ class gBsdConv(object):
 		text_origin_buffer.connect("changed", self.text_cb)
 
 		#+Naming tab
-		naming_origin = builder.get_object("naming_origin")
+		naming = builder.get_object("naming")
+
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
-		naming_origin.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
 		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
-		naming_origin.append_column(items_path)
-		naming_origin.set_expander_column(items_path)
-		naming_origin.set_model(self.items)
+		items_path.set_resizable(True)
+		naming.append_column(items_path)
+		naming.set_expander_column(items_path)
 
-		naming_result = builder.get_object("naming_result")
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
-		naming_result.append_column(items_path)
-		naming_result.set_expander_column(items_path)
+		renderer = Gtk.CellRendererText()
+		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=3)
+		items_path2.set_resizable(True)
+		naming.append_column(items_path2)
+
+		renderer = Gtk.CellRendererText()
+		info = Gtk.TreeViewColumn("Info", renderer, text=2)
+		naming.append_column(info)
+
+		naming.set_model(self.items)
 
 		#+Content tab
 		content_items = builder.get_object("content_items")
@@ -166,9 +174,9 @@ class gBsdConv(object):
 				curr = self.items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
-					parent = self.items.append(parent, [1, p, ''])
+					parent = self.items.append(parent, [1, p, '', ''])
 				else:
-					parent = self.items.append(parent, [-1, p, ''])
+					parent = self.items.append(parent, [-1, p, '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -243,25 +251,22 @@ class gBsdConv(object):
 	def naming_cb(self):
 		if not self.converter:
 			return
-		naming_result = self.builder.get_object("naming_result")
-		naming_result_store = Gtk.TreeStore(int, str)
-		naming_result.set_model(naming_result_store)
+		naming = self.builder.get_object("naming")
+		self.naming_cb_r(None)
+		naming.expand_all()
 
-		self.naming_cb_r(naming_result_store, None, None)
-
-		naming_result.expand_all()
-		self.builder.get_object("naming_origin").expand_all()
-
-	def naming_cb_r(self, store, fparent, tparent):
-		fcurr = self.items.iter_children(fparent)
-		while fcurr != None:
-			if self.items[fcurr][0]>=0:
-				tcurr = store.append(tparent, [1, self.converter.conv(self.items[fcurr][1])])
-			else:
-				tcurr = store.append(tparent, [-1, self.items[fcurr][1]])
-			if self.items.iter_has_child(fcurr):
-				self.naming_cb_r(store, fcurr, tcurr)
-			fcurr = self.items.iter_next(fcurr)
+	def naming_cb_r(self, parent):
+		curr = self.items.iter_children(parent)
+		while curr != None:
+			if self.items[curr][0]>=0:
+				self.items[curr][3]=self.localefilter.conv(self.converter.conv(self.items[curr][1]))
+				self.items[curr][2]=''
+				info=self.converter.info()
+				if info['ierr']+info['oerr']>0
+					self.items[curr][2]+=str(info['ierr']+info['oerr'])
+			if self.items.iter_has_child(curr):
+				self.naming_cb_r(curr)
+			curr = self.items.iter_next(curr)
 
 	#+Content
 	def content_items_select_cb(self, obj):
