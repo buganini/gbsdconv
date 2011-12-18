@@ -294,13 +294,13 @@ class gBsdConv(object):
 		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=self.const.uname0)
 		items_path.set_expand(True)
 		content_items.append_column(items_path)
 		content_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=2)
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=self.const.info)
 		content_items.append_column(items_info)
 
 		content_items.set_model(self.items)
