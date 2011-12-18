@@ -4,7 +4,7 @@ import os
 from bsdconv import *
 from gi.repository import Gtk
 
-class gBsdConv(object):       
+class gBsdConv(object):
 	def __init__(self):
 		self.builder = builder = Gtk.Builder()
 		builder.add_from_file("gbsdconv.xml")
@@ -32,99 +32,11 @@ class gBsdConv(object):
 		operation_tabs = builder.get_object("operation_tabs")
 		operation_tabs.connect("switch-page", self.operation_tabs_cb)
 
-		#Items tab
-		items = builder.get_object("items")
-		toggle=Gtk.CellRendererToggle()
-		toggle.connect("toggled", self.items_toggle_cb)
-		items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
-		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=1)
-		items.append_column(items_path)
-		items.set_expander_column(items_path)
-		items.set_model(self.items)
-
-		item_add = builder.get_object("item_add")
-		item_add.connect("clicked", self.item_add_cb)
-
-		item_add_r = builder.get_object("item_add_r")
-		item_add_r.connect("clicked", self.item_add_cb)
-
-		item_remove = builder.get_object("item_remove")
-		item_remove.connect("clicked", self.item_remove_cb)
-
-		#Conversion tab
-		self.from_codecs = Gtk.ListStore(str)
-		self.inter_codecs = Gtk.ListStore(str)
-		self.to_codecs = Gtk.ListStore(str)
-
-		codecs=codecs_list(FROM)
-		for codec in codecs:
-			self.from_codecs.append([codec])
-		codecs=codecs_list(INTER)
-		for codec in codecs:
-			self.inter_codecs.append([codec])
-		codecs=codecs_list(TO)
-		for codec in codecs:
-			self.to_codecs.append([codec])
-
-		text_convert = builder.get_object("conversion_generate")
-		text_convert.connect("clicked", self.generate_cb)
-
-		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
-
-		builder.get_object("conversion_add").connect('clicked', self.conversion_add_cb)
-		builder.get_object("conversion_add").clicked()
-
-		#Operation tab
-		#+Text tab
-		text_origin_buffer = builder.get_object("text_origin").get_buffer()
-		text_origin_buffer.connect("changed", self.text_cb)
-
-		#+Naming tab
-		naming = builder.get_object("naming")
-
-		toggle=Gtk.CellRendererToggle()
-		toggle.connect("toggled", self.items_toggle_cb)
-		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
-
-		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
-		items_path.set_resizable(True)
-		naming.append_column(items_path)
-		naming.set_expander_column(items_path)
-
-		renderer = Gtk.CellRendererText()
-		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=3)
-		items_path2.set_resizable(True)
-		naming.append_column(items_path2)
-
-		renderer = Gtk.CellRendererText()
-		info = Gtk.TreeViewColumn("Info", renderer, text=2)
-		naming.append_column(info)
-
-		naming.set_model(self.items)
-
-		#+Content tab
-		content_items = builder.get_object("content_items")
-		toggle=Gtk.CellRendererToggle()
-		toggle.connect("toggled", self.items_toggle_cb)
-		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
-
-		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
-		items_path.set_expand(True)
-		content_items.append_column(items_path)
-		content_items.set_expander_column(items_path)
-
-		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=2)
-		content_items.append_column(items_info)
-
-		content_items.set_model(self.items)
-
-		content_items_select = content_items.get_selection()
-		content_items_select.connect("changed", self.content_items_select_cb)
-
-		builder.get_object('content_convert').connect('clicked', self.content_convert)
+		self.item_tab_init()
+		self.conversion_tab_init()
+		self.operation_text_tab_init()
+		self.operation_naming_tab_init()
+		self.operation_content_tab_init()
 
 		#launch
 		self.window.show()
@@ -141,6 +53,25 @@ class gBsdConv(object):
 
 
 	#Callbacks for items tab
+	def item_tab_init(self):
+		items = self.builder.get_object("items")
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=1)
+		items.append_column(items_path)
+		items.set_expander_column(items_path)
+		items.set_model(self.items)
+
+		item_add = self.builder.get_object("item_add")
+		item_add.connect("clicked", self.item_add_cb)
+
+		item_add_r = self.builder.get_object("item_add_r")
+		item_add_r.connect("clicked", self.item_add_cb)
+
+		item_remove = self.builder.get_object("item_remove")
+		item_remove.connect("clicked", self.item_remove_cb)
+
 	def item_add_cb(self, obj):
 		builder = self.builder
 		recur = obj==builder.get_object("item_add_r")
@@ -184,6 +115,28 @@ class gBsdConv(object):
 			model.remove(treeiter)
 
 	#Callbacks for conversion tab
+	def conversion_tab_init(self):
+		self.from_codecs = Gtk.ListStore(str)
+		self.inter_codecs = Gtk.ListStore(str)
+		self.to_codecs = Gtk.ListStore(str)
+
+		codecs=codecs_list(FROM)
+		for codec in codecs:
+			self.from_codecs.append([codec])
+		codecs=codecs_list(INTER)
+		for codec in codecs:
+			self.inter_codecs.append([codec])
+		codecs=codecs_list(TO)
+		for codec in codecs:
+			self.to_codecs.append([codec])
+
+		text_convert = self.builder.get_object("conversion_generate")
+		text_convert.connect("clicked", self.generate_cb)
+
+		self.builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
+
+		self.builder.get_object("conversion_add").connect('clicked', self.conversion_add_cb)
+		self.builder.get_object("conversion_add").clicked()
 	def generate_cb(self, obj):
 		conversion=[]
 		builder = self.builder
@@ -229,6 +182,10 @@ class gBsdConv(object):
 
 	#Callbacks for operation tab
 	#+Text
+	def operation_text_tab_init(self):
+		text_origin_buffer = self.builder.get_object("text_origin").get_buffer()
+		text_origin_buffer.connect("changed", self.text_cb)
+
 	def text_cb(self, obj):
 		builder = self.builder
 		if not self.converter:
@@ -242,6 +199,30 @@ class gBsdConv(object):
 		self.set_status('ierr:%d oerr:%d' % (info['ierr'], info['oerr']))
 
 	#+Naming
+	def operation_naming_tab_init(self):
+		naming = self.builder.get_object("naming")
+
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+
+		renderer = Gtk.CellRendererText()
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		items_path.set_resizable(True)
+		naming.append_column(items_path)
+		naming.set_expander_column(items_path)
+
+		renderer = Gtk.CellRendererText()
+		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=3)
+		items_path2.set_resizable(True)
+		naming.append_column(items_path2)
+
+		renderer = Gtk.CellRendererText()
+		info = Gtk.TreeViewColumn("Info", renderer, text=2)
+		naming.append_column(info)
+
+		naming.set_model(self.items)
+
 	def operation_tabs_cb(self, notebook, page, pagen):
 		if page == self.builder.get_object("operation_naming_page"):
 			self.naming_cb()
@@ -284,6 +265,29 @@ class gBsdConv(object):
 		return os.path.join(*ret)
 
 	#+Content
+	def operation_content_tab_init(self):
+		content_items = self.builder.get_object("content_items")
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+
+		renderer = Gtk.CellRendererText()
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=1)
+		items_path.set_expand(True)
+		content_items.append_column(items_path)
+		content_items.set_expander_column(items_path)
+
+		renderer = Gtk.CellRendererText()
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=2)
+		content_items.append_column(items_info)
+
+		content_items.set_model(self.items)
+
+		content_items_select = content_items.get_selection()
+		content_items_select.connect("changed", self.content_items_select_cb)
+
+		self.builder.get_object('content_convert').connect('clicked', self.content_convert)
+
 	def content_items_select_cb(self, obj):
 		builder = self.builder
 		model, treeiter = obj.get_selected()
