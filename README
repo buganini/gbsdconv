@@ -1,0 +1,10 @@
+GUI for bsdconv
+
+Feature:
+	Text conversion
+	Text file conversion
+
+Todo:
+	Conversion setting panel
+	File path conversion
+	Mutimetia files metadata conversion
