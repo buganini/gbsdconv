@@ -260,13 +260,28 @@ class gBsdConv(object):
 		while curr != None:
 			if self.items[curr][0]>=0:
 				self.items[curr][3]=self.localefilter.conv(self.converter.conv(self.items[curr][1]))
-				self.items[curr][2]=''
+				info_text=''
 				info=self.converter.info()
-				if info['ierr']+info['oerr']>0
-					self.items[curr][2]+=str(info['ierr']+info['oerr'])
+				if info['ierr']+info['oerr']>0:
+					info_text+=str(info['ierr']+info['oerr'])
+				newpath = self.getFullNewPath(self.items, curr)
+				if os.path.exists(newpath):
+					info_text+='D'
+				self.items[curr][2]=info_text
 			if self.items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = self.items.iter_next(curr)
+
+	def getFullNewPath(self, model, ti):
+		ret=[]
+		if not ti:
+			return ''
+		ret.insert(0, model[ti][3])
+		ti = model.iter_parent(ti)
+		while ti!=None:
+			ret.insert(0, model[ti][1])
+			ti = model.iter_parent(ti)
+		return os.path.join(*ret)
 
 	#+Content
 	def content_items_select_cb(self, obj):
