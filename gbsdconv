@@ -219,7 +219,7 @@ class gBsdConv(object):
 		naming = self.builder.get_object("naming")
 
 		toggle=Gtk.CellRendererToggle()
-		toggle.connect("toggled", self.items_toggle_cb)
+		toggle.connect("toggled", self.naming_items_toggle_cb)
 		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
@@ -229,7 +229,7 @@ class gBsdConv(object):
 		naming.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=self.const.uname2)
+		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=self.const.uname1)
 		items_path2.set_resizable(True)
 		naming.append_column(items_path2)
 
@@ -258,7 +258,7 @@ class gBsdConv(object):
 		curr = self.items.iter_children(parent)
 		pool={}
 		while curr != None:
-			if self.items[curr][self.const.selected]>=0:
+			if self.items[curr][self.const.selected]>0:
 				newname=self.converter.conv(self.items[curr][self.const.name0])
 				self.items[curr][self.const.name2]=newname
 				self.items[curr][self.const.uname2]=self.utf8er.conv(self.items[curr][self.const.name2])
@@ -274,12 +274,15 @@ class gBsdConv(object):
 				else:
 					pool[newname]=curr
 				newpath = self.getFullNewPath(self.items, curr)
-				print newpath
 				if os.path.exists(newpath):
 					info_text+='D'
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
 				self.items[curr][self.const.info]=info_text
+			elif self.items[curr][self.const.selected]==0:
+				self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
+				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
+				self.items[curr][self.const.info]=''
 			if self.items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = self.items.iter_next(curr)
@@ -290,15 +293,22 @@ class gBsdConv(object):
 			return ''
 		ret.insert(0, model[ti][self.const.name2])
 		ti = model.iter_parent(ti)
-		print ti
 		while ti!=None:
 			if model[ti][self.const.selected]>=0:
 				ret.insert(0, model[ti][self.const.name1])
 			else:
 				ret.insert(0, model[ti][self.const.name0])
-			print ret
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
+
+	def naming_items_toggle_cb(self, renderer, path):
+		iter=self.items.get_iter(path)
+		if self.items[iter][self.const.selected]:
+			self.items[iter][self.const.selected]=0
+			
+		else:
+			self.items[iter][self.const.selected]=1
+		self.naming_cb_r(self.items.iter_parent(iter))
 
 	def naming_convert(self):
 		pass
