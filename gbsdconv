@@ -359,15 +359,17 @@ class gBsdConv(object):
 		builder = self.builder
 		model, treeiter = obj.get_selected()
 		if treeiter != None:
-			filename = self.getFullPath(treeiter)
-			if os.path.isfile(filename):
-				f=open(filename,'r')
+			fullpath = self.getFullPath(treeiter)
+			if os.path.isfile(fullpath):
+				f=open(fullpath,'r')
 				cnt=f.read()
 				builder.get_object("content_origin").get_buffer().set_text(self.utf8er.conv(cnt))
 				f.close()
 				if not self.converter:
 					return
 				builder.get_object("content_result").get_buffer().set_text(self.utf8er.conv(self.converter.conv(cnt)))
+			else:
+				self.set_status("%s is not a file" % fullpath)
 
 	def content_cb(self):
 		if not self.converter:
@@ -381,8 +383,9 @@ class gBsdConv(object):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			if item.selected>=0:
-				self.converter.testconv_file(self.getFullPath(curr))
+			fullpath=self.getFullPath(curr)
+			if item.selected>=0 and os.path.isfile(fullpath):
+				self.converter.testconv_file(fullpath)
 				info=self.converter.info()
 				err=info['ierr']+info['oerr']
 				if err>0:
