@@ -4,18 +4,40 @@ import os
 from bsdconv import *
 from gi.repository import Gtk
 
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str)
+attr_map={
+	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
+	'name0':	1,
+	'info':		2,
+	'name2':	3,	#used by naming operation
+	'name1':	4,	#name2 or name0 if there are duplication or collision
+	'uname0':	5,	#utf8er(name0)
+	'uname1':	6,	#utf8er(name1)
+	'uname2':	7,	#utf8er(name2)
+	'error_counter':8,
+	'collision':	9,
+	'duplication':	10
+}
+
+class Item(object):
+	def __init__(self, iter):
+		self.item=items[iter]
+
+	def __getattr__(self, key):
+		if key in attr_map:
+			return self.item[attr_map[key]]
+		else:
+			return super(Item, self).__getattr__(key)
+
+	def __setattr__(self, key, value):
+		if key in attr_map:
+			self.item[attr_map[key]]=value
+		else:
+			super(Item, self).__setattr__(key, value)
+
 class gBsdConv(object):
 	def __init__(self):
-		class const(object):
-			def __init__(self):
-				self.selected=0
-				self.name0=0
-				self.info=0
-				self.name2=0
-				self.name1=0
-				self.uname0=0
-				self.uname1=0
-				self.uname2=0
+
 		self.builder = builder = Gtk.Builder()
 		builder.add_from_file("gbsdconv.xml")
 		self.window = builder.get_object("main_window")
@@ -27,21 +49,7 @@ class gBsdConv(object):
 		self.counter = 0
 		self.err_counter = 0
 		self.err_counter_selected = 0
-		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str)
-		self.const=const()
-		self.const.selected=0	#0=no, 1=yes, -1=not_in_zone
-		self.const.name0=1
-		self.const.info=2
-		self.const.name2=3	#used by naming operation
-		self.const.name1=4	#name2 or name0 if there are duplication or collision
-		self.const.uname0=5	#utf8er(name0)
-		self.const.uname1=6	#utf8er(name1)
-		self.const.uname2=7	#utf8er(name2)
-		self.const.error_counter=8
-		self.const.collision=9
-		self.const.duplication=10
-		
+		self.converter = Bsdconv("BYTE:BYTE")		
 		
 		self.inter_codecs = {}
 
@@ -73,14 +81,14 @@ class gBsdConv(object):
 
 	#Callbacks for items tab
 	def item_tab_init(self):
-		items = self.builder.get_object("items")
+		items_view = self.builder.get_object("items")
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
-		items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
-		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=self.const.uname0)
-		items.append_column(items_path)
-		items.set_expander_column(items_path)
-		items.set_model(self.items)
+		items_view.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+		items_path=Gtk.TreeViewColumn("Path", Gtk.CellRendererText(), text=attr_map['uname0'])
+		items_view.append_column(items_path)
+		items_view.set_expander_column(items_path)
+		items_view.set_model(items)
 
 		item_add = self.builder.get_object("item_add")
 		item_add.connect("clicked", self.item_add_cb)
@@ -108,7 +116,7 @@ class gBsdConv(object):
 
 	def item_add_cb_sub(self, path):
 		a=[path]
-		while len(a[self.const.selected])>1:
+		while len(a[attr_map['selected']])>1:
 			t=a.pop(0)
 			p, q = os.path.split(t)
 			a.insert(0, q)
@@ -116,18 +124,19 @@ class gBsdConv(object):
 		parent = None
 		for i in xrange(0, len(a)):
 			p=a[i]
-			curr = self.items.iter_children(parent)
+			curr = items.iter_children(parent)
 			while curr != None:
-				if p==self.items[curr][self.const.name0]:
+				item=Item(curr)
+				if p==item.name0:
 					parent = curr
 					break
-				curr = self.items.iter_next(curr)
+				curr = items.iter_next(curr)
 			if curr == None:
 				if i==len(a)-1:
 					selected=1
 				else:
 					selected=-1
-				parent = self.items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -227,21 +236,21 @@ class gBsdConv(object):
 		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=self.const.uname0)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=attr_map['uname0'])
 		items_path.set_resizable(True)
 		naming.append_column(items_path)
 		naming.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=self.const.uname1)
+		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=attr_map['uname1'])
 		items_path2.set_resizable(True)
 		naming.append_column(items_path2)
 
 		renderer = Gtk.CellRendererText()
-		info = Gtk.TreeViewColumn("Info", renderer, text=self.const.info)
+		info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
 		naming.append_column(info)
 
-		naming.set_model(self.items)
+		naming.set_model(items)
 
 		self.builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
@@ -259,62 +268,65 @@ class gBsdConv(object):
 		naming.expand_all()
 
 	def naming_cb_r(self, parent):
-		curr = self.items.iter_children(parent)
+		curr = items.iter_children(parent)
 		pool={}
 		while curr != None:
-			self.items[curr][self.const.error_counter]=''
-			self.items[curr][self.const.collision]=''
-			self.items[curr][self.const.duplication]=''
-			if self.items[curr][self.const.selected]>0:
-				newname=self.converter.conv(self.items[curr][self.const.name0])
-				self.items[curr][self.const.name2]=newname
-				self.items[curr][self.const.uname2]=self.utf8er.conv(self.items[curr][self.const.name2])
-				self.items[curr][self.const.name1]=self.items[curr][self.const.name2]
+			item=Item(curr)
+			item.error_counter=''
+			item.collision=''
+			item.duplication=''
+			if item.selected>0:
+				newname=self.converter.conv(item.name0)
+				item.name2=newname
+				item.uname2=self.utf8er.conv(item.name2)
+				item.name1=item.name2
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
-					self.items[curr][self.const.error_counter]=str(info['ierr']+info['oerr'])
+					item.error_counter=str(info['ierr']+info['oerr'])
 				if newname in pool:
-					self.items[curr][self.const.collision]='C'
-					self.items[pool[newname]][self.const.collision]='C'
+					item.collision='C'
+					Item(pool[newname]).collision='C'
 					self.geninfo(pool[newname])
-					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
+					item.name1=item.name0
 				else:
 					pool[newname]=curr
-				newpath = self.getFullNewPath(self.items, curr)
-				if newname!=self.items[curr][self.const.name0] and os.path.exists(newpath):
-					self.items[curr][self.const.duplication]='D'
-					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
-				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
-			elif self.items[curr][self.const.selected]==0:
-				self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
-				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
+				newpath = self.getFullNewPath(curr)
+				if newname!=item.name0 and os.path.exists(newpath):
+					item.duplication='D'
+					item.name1=item.name0
+				item.uname1=self.utf8er.conv(item.name1)
+			elif item.selected==0:
+				item.name1=item.name0
+				item.uname1=self.utf8er.conv(item.name1)
 			self.geninfo(curr)
-			if self.items.iter_has_child(curr):
+			if items.iter_has_child(curr):
 				self.naming_cb_r(curr)
-			curr = self.items.iter_next(curr)
+			curr = items.iter_next(curr)
 
-	def getFullNewPath(self, model, ti):
+	def getFullNewPath(self, ti):
 		ret=[]
 		if not ti:
 			return ''
-		ret.insert(0, model[ti][self.const.name2])
-		ti = model.iter_parent(ti)
+		item=Item(ti)
+		ret.insert(0, item.name2)
+		ti = items.iter_parent(ti)
 		while ti!=None:
-			if model[ti][self.const.selected]>=0:
-				ret.insert(0, model[ti][self.const.name1])
+			if item.selected>=0:
+				ret.insert(0, item.name1)
 			else:
-				ret.insert(0, model[ti][self.const.name0])
-			ti = model.iter_parent(ti)
+				ret.insert(0, item.name0)
+			ti = items.iter_parent(ti)
 		return os.path.join(*ret)
 
 	def naming_items_toggle_cb(self, renderer, path):
-		iter=self.items.get_iter(path)
-		if self.items[iter][self.const.selected]:
-			self.items[iter][self.const.selected]=0
+		iter=items.get_iter(path)
+		item=Item(iter)
+		if item.selected:
+			item.selected=0
 			
 		else:
-			self.items[iter][self.const.selected]=1
-		self.naming_cb_r(self.items.iter_parent(iter))
+			item.selected=1
+		self.naming_cb_r(items.iter_parent(iter))
 
 	def naming_convert(self):
 		pass
@@ -327,16 +339,16 @@ class gBsdConv(object):
 		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=self.const.uname0)
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=attr_map['uname0'])
 		items_path.set_expand(True)
 		content_items.append_column(items_path)
 		content_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=self.const.info)
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
 		content_items.append_column(items_info)
 
-		content_items.set_model(self.items)
+		content_items.set_model(items)
 
 		content_items_select = content_items.get_selection()
 		content_items_select.connect("changed", self.content_items_select_cb)
@@ -347,7 +359,7 @@ class gBsdConv(object):
 		builder = self.builder
 		model, treeiter = obj.get_selected()
 		if treeiter != None:
-			filename = self.getFullPath(model, treeiter)
+			filename = self.getFullPath(treeiter)
 			if os.path.isfile(filename):
 				f=open(filename,'r')
 				cnt=f.read()
@@ -366,22 +378,23 @@ class gBsdConv(object):
 		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def content_cb_r(self, parent):
-		curr = self.items.iter_children(parent)
+		curr = items.iter_children(parent)
 		while curr != None:
-			if self.items[curr][self.const.selected]>=0:
-				self.converter.testconv_file(self.getFullPath(self.items, curr))
+			item=Item(curr)
+			if item.selected>=0:
+				self.converter.testconv_file(self.getFullPath(curr))
 				info=self.converter.info()
 				err=info['ierr']+info['oerr']
 				if err>0:
-					self.items[curr][self.const.info]=str(err)
+					item.info=str(err)
 					self.err_counter+=1
-					if self.items[curr][self.const.selected]>0:
+					if item.selected>0:
 						self.err_counter_selected+=1
 				else:
-					self.items[curr][self.const.info]=''
-			if self.items.iter_has_child(curr):
+					item.info=''
+			if items.iter_has_child(curr):
 				self.content_cb_r(curr)
-			curr = self.items.iter_next(curr)
+			curr = items.iter_next(curr)
 
 	def content_convert(self, obj):
 		if not self.converter:
@@ -391,15 +404,16 @@ class gBsdConv(object):
 		self.set_status('%d files converted' % self.counter)
 		
 	def content_convert_r(self, parent):
-		curr = self.items.iter_children(parent)
+		curr = items.iter_children(parent)
 		while curr != None:
-			if self.items[curr][self.const.selected]>0:
-				fpath=self.getFullPath(self.items, curr)
+			item=Item(curr)
+			if item.selected>0:
+				fpath=self.getFullPath(curr)
 				self.converter.conv_file(fpath, fpath)
 				self.counter+=1
-			if self.items.iter_has_child(curr):
+			if items.iter_has_child(curr):
 				self.content_convert_r(curr)
-			curr = self.items.iter_next(curr)
+			curr = items.iter_next(curr)
 
 	#helper
 	def set_status(self, s):
@@ -408,31 +422,35 @@ class gBsdConv(object):
 		status.push(0, s)
 
 	def items_toggle_render_cb(self, column, cell, model, iter, arg):
-		if self.items[iter][self.const.selected]==-1:
+		item=Item(iter)
+		if item.selected==-1:
 			cell.set_visible(False)
 		else:
 			cell.set_visible(True)
-			if self.items[iter][self.const.selected]==0:
+			if item.selected==0:
 				cell.set_active(False)
 			else:
 				cell.set_active(True)
 
 	def items_toggle_cb(self, renderer, path):
-		iter=self.items.get_iter(path)
-		if self.items[iter][self.const.selected]:
-			self.items[iter][self.const.selected]=0
+		iter=items.get_iter(path)
+		item=Item(iter)
+		if item.selected:
+			item.selected=0
 		else:
-			self.items[iter][self.const.selected]=1
+			item.selected=1
 
-	def getFullPath(self, model, ti):
+	def getFullPath(self, ti):
 		ret=[]
 		while ti!=None:
-			ret.insert(0, model[ti][self.const.name0])
-			ti = model.iter_parent(ti)
+			item=Item(ti)
+			ret.insert(0, item.name0)
+			ti = items.iter_parent(ti)
 		return os.path.join(*ret)
 
 	def geninfo(self, curr):
-		self.items[curr][self.const.info]=''.join((self.items[curr][self.const.error_counter],self.items[curr][self.const.collision],self.items[curr][self.const.duplication]))
+		item=Item(curr)
+		item.info=''.join((item.error_counter,item.collision,item.duplication))
 
 if __name__ == "__main__":
 	app = gBsdConv()
