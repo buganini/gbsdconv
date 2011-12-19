@@ -239,6 +239,8 @@ class gBsdConv(object):
 
 		naming.set_model(self.items)
 
+		self.builder.get_object('naming_convert').connect('clicked', self.naming_convert)
+
 	def operation_tabs_cb(self, notebook, page, pagen):
 		if page == self.builder.get_object("operation_naming_page"):
 			self.naming_cb()
@@ -283,6 +285,9 @@ class gBsdConv(object):
 			ret.insert(0, model[ti][self.const.name1])
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
+
+	def naming_convert(self):
+		pass
 
 	#+Content
 	def operation_content_tab_init(self):
