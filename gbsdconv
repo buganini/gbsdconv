@@ -28,7 +28,7 @@ class gBsdConv(object):
 		self.err_counter = 0
 		self.err_counter_selected = 0
 		self.converter = Bsdconv("BYTE:BYTE")
-		self.items = Gtk.TreeStore(int, str, str, str, str, str, str, str)
+		self.items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str)
 		self.const=const()
 		self.const.selected=0	#0=no, 1=yes, -1=not_in_zone
 		self.const.name0=1
@@ -38,6 +38,10 @@ class gBsdConv(object):
 		self.const.uname0=5	#utf8er(name0)
 		self.const.uname1=6	#utf8er(name1)
 		self.const.uname2=7	#utf8er(name2)
+		self.const.error_counter=8
+		self.const.collision=9
+		self.const.duplication=10
+		
 		
 		self.inter_codecs = {}
 
@@ -123,7 +127,7 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = self.items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', ''])
+				parent = self.items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -258,31 +262,33 @@ class gBsdConv(object):
 		curr = self.items.iter_children(parent)
 		pool={}
 		while curr != None:
+			self.items[curr][self.const.error_counter]=''
+			self.items[curr][self.const.collision]=''
+			self.items[curr][self.const.duplication]=''
 			if self.items[curr][self.const.selected]>0:
 				newname=self.converter.conv(self.items[curr][self.const.name0])
 				self.items[curr][self.const.name2]=newname
 				self.items[curr][self.const.uname2]=self.utf8er.conv(self.items[curr][self.const.name2])
 				self.items[curr][self.const.name1]=self.items[curr][self.const.name2]
-				info_text=''
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
-					info_text+=str(info['ierr']+info['oerr'])
+					self.items[curr][self.const.error_counter]=str(info['ierr']+info['oerr'])
 				if newname in pool:
-					info_text+='C'
-					self.items[pool[newname]][self.const.info]+='C'
+					self.items[curr][self.const.collision]='C'
+					self.items[pool[newname]][self.const.collision]='C'
+					self.geninfo(pool[newname])
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				else:
 					pool[newname]=curr
 				newpath = self.getFullNewPath(self.items, curr)
 				if newname!=self.items[curr][self.const.name0] and os.path.exists(newpath):
-					info_text+='D'
+					self.items[curr][self.const.duplication]='D'
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
-				self.items[curr][self.const.info]=info_text
 			elif self.items[curr][self.const.selected]==0:
 				self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
-				self.items[curr][self.const.info]=''
+			self.geninfo(curr)
 			if self.items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = self.items.iter_next(curr)
@@ -425,6 +431,8 @@ class gBsdConv(object):
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
 
+	def geninfo(self, curr):
+		self.items[curr][self.const.info]=''.join((self.items[curr][self.const.error_counter],self.items[curr][self.const.collision],self.items[curr][self.const.duplication]))
 
 if __name__ == "__main__":
 	app = gBsdConv()
