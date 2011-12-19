@@ -256,7 +256,7 @@ class gBsdConv(object):
 
 	def naming_cb_r(self, parent):
 		curr = self.items.iter_children(parent)
-		pool=[]
+		pool={}
 		while curr != None:
 			if self.items[curr][self.const.selected]>=0:
 				newname=self.converter.conv(self.items[curr][self.const.name0])
@@ -269,9 +269,12 @@ class gBsdConv(object):
 					info_text+=str(info['ierr']+info['oerr'])
 				if newname in pool:
 					info_text+='C'
+					self.items[pool[newname]][self.const.info]+='C'
+					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				else:
-					pool.append(newname)
+					pool[newname]=curr
 				newpath = self.getFullNewPath(self.items, curr)
+				print newpath
 				if os.path.exists(newpath):
 					info_text+='D'
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
@@ -287,8 +290,13 @@ class gBsdConv(object):
 			return ''
 		ret.insert(0, model[ti][self.const.name2])
 		ti = model.iter_parent(ti)
+		print ti
 		while ti!=None:
-			ret.insert(0, model[ti][self.const.name1])
+			if model[ti][self.const.selected]>=0:
+				ret.insert(0, model[ti][self.const.name1])
+			else:
+				ret.insert(0, model[ti][self.const.name0])
+			print ret
 			ti = model.iter_parent(ti)
 		return os.path.join(*ret)
 
