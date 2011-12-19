@@ -49,6 +49,8 @@ class gBsdConv(object):
 		self.counter = 0
 		self.err_counter = 0
 		self.err_counter_selected = 0
+		self.collision = 0
+		self.duplication = 0
 		self.converter = Bsdconv("BYTE:BYTE")		
 		
 		self.inter_codecs = {}
@@ -264,7 +266,12 @@ class gBsdConv(object):
 		if not self.converter:
 			return
 		naming = self.builder.get_object("naming")
+		self.err_counter=0
+		self.err_counter_selected=0
+		self.collision=0
+		self.duplication=0
 		self.naming_cb_r(None)
+		self.set_status('Error: %d Collision: %d Duplication: %d' % (self.err_counter_selected, self.collision, self.duplication))
 		naming.expand_all()
 
 	def naming_cb_r(self, parent):
@@ -283,9 +290,13 @@ class gBsdConv(object):
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
 					item.error_counter=str(info['ierr']+info['oerr'])
+					self.err_counter_selected+=1
 				if newname in pool:
 					item.collision='C'
-					Item(pool[newname]).collision='C'
+					self.collision+=1
+					if Item(pool[newname]).collision!='C':
+						Item(pool[newname]).collision='C'
+						self.collision+=1
 					self.geninfo(pool[newname])
 					item.name1=item.name0
 				else:
@@ -293,6 +304,7 @@ class gBsdConv(object):
 				newpath = self.getFullNewPath(curr)
 				if newname!=item.name0 and os.path.exists(newpath):
 					item.duplication='D'
+					self.duplication+=1
 					item.name1=item.name0
 				item.uname1=self.utf8er.conv(item.name1)
 			elif item.selected==0:
