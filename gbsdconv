@@ -256,15 +256,21 @@ class gBsdConv(object):
 
 	def naming_cb_r(self, parent):
 		curr = self.items.iter_children(parent)
+		pool=[]
 		while curr != None:
 			if self.items[curr][self.const.selected]>=0:
-				self.items[curr][self.const.name2]=self.converter.conv(self.items[curr][self.const.name0])
+				newname=self.converter.conv(self.items[curr][self.const.name0])
+				self.items[curr][self.const.name2]=newname
 				self.items[curr][self.const.uname2]=self.utf8er.conv(self.items[curr][self.const.name2])
 				self.items[curr][self.const.name1]=self.items[curr][self.const.name2]
 				info_text=''
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
 					info_text+=str(info['ierr']+info['oerr'])
+				if newname in pool:
+					info_text+='C'
+				else:
+					pool.append(newname)
 				newpath = self.getFullNewPath(self.items, curr)
 				if os.path.exists(newpath):
 					info_text+='D'
