@@ -328,8 +328,24 @@ class gBsdConv(object):
 			item.selected=1
 		self.naming_cb_r(items.iter_parent(iter))
 
-	def naming_convert(self):
-		pass
+	def naming_convert(self, obj):
+		if not self.converter:
+			return
+		self.counter=0
+		self.naming_convert_r(None)
+		self.set_status('%d dirs/files converted' % self.counter)
+		
+	def naming_convert_r(self, parent):
+		curr = items.iter_children(parent)
+		while curr != None:
+			if items.iter_has_child(curr):
+				self.naming_convert_r(curr)
+			item=Item(curr)
+			if item.selected>0 and item.name0!=item.name1:
+				os.chdir(os.path.dirname(self.getFullPath(curr)))
+				os.rename(item.name0, item.name1)
+				self.counter+=1
+			curr = items.iter_next(curr)
 
 	#+Content
 	def operation_content_tab_init(self):
