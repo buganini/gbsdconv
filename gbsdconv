@@ -274,7 +274,7 @@ class gBsdConv(object):
 				else:
 					pool[newname]=curr
 				newpath = self.getFullNewPath(self.items, curr)
-				if os.path.exists(newpath):
+				if newname!=self.items[curr][self.const.name0] and os.path.exists(newpath):
 					info_text+='D'
 					self.items[curr][self.const.name1]=self.items[curr][self.const.name0]
 				self.items[curr][self.const.uname1]=self.utf8er.conv(self.items[curr][self.const.name1])
