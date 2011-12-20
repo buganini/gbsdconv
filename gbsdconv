@@ -4,27 +4,37 @@ import os
 from bsdconv import *
 from gi.repository import Gtk
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str)
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
 	'info':		2,
 	'name2':	3,	#used by naming operation
 	'name1':	4,	#name2 or name0 if there are duplication or collision
-	'uname0':	5,	#utf8er(name0)
-	'uname1':	6,	#utf8er(name1)
-	'uname2':	7,	#utf8er(name2)
+	'uname0':	5,	#utf8er(name0 + target0)
+	'uname1':	6,	#utf8er(name1 + target1)
+	'uname2':	7,	#utf8er(name2) (unused)
 	'error_counter':8,
 	'collision':	9,
-	'duplication':	10
+	'duplication':	10,
+	'target0':	11,	#symlink target0
+	'target1':	12,	#symlink target1
 }
 
 class Item(object):
 	def __init__(self, iter):
+		self.iter=iter
 		self.item=items[iter]
 
 	def __getattr__(self, key):
-		if key in attr_map:
+		if key == 'fullpath':
+			ret=[]
+			iter=self.iter
+			while iter!=None:
+				ret.insert(0, items[iter][attr_map['name0']])
+				iter = items.iter_parent(iter)
+			return os.path.join(*ret)
+		elif key in attr_map:
 			return self.item[attr_map[key]]
 		else:
 			return super(Item, self).__getattr__(key)
@@ -117,12 +127,7 @@ class gBsdConv(object):
 				self.item_add_cb_r(os.path.join(path, spath), recur)
 
 	def item_add_cb_sub(self, path):
-		a=[path]
-		while len(a[attr_map['selected']])>1:
-			t=a.pop(0)
-			p, q = os.path.split(t)
-			a.insert(0, q)
-			a.insert(0, p)
+		a=self.pathsplit(path)
 		parent = None
 		for i in xrange(0, len(a)):
 			p=a[i]
@@ -138,7 +143,7 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -194,9 +199,6 @@ class gBsdConv(object):
 			self.set_status(str(self.converter))
 		else:
 			self.set_status(error())
-
-	def codecs_list_cb(self, obj):
-		print obj.get_label()
 
 	def conversion_add_cb(self, obj):
 		conversion = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -282,10 +284,12 @@ class gBsdConv(object):
 			item.error_counter=''
 			item.collision=''
 			item.duplication=''
+			fullpath=item.fullpath
+			if os.path.islink(fullpath):
+				item.target0=os.readlink(fullpath)
 			if item.selected>0:
 				newname=self.converter.conv(item.name0)
 				item.name2=newname
-				item.uname2=self.utf8er.conv(item.name2)
 				item.name1=item.name2
 				info=self.converter.info()
 				if info['ierr']+info['oerr']>0:
@@ -294,10 +298,11 @@ class gBsdConv(object):
 				if newname in pool:
 					item.collision='C'
 					self.collision+=1
-					if Item(pool[newname]).collision!='C':
-						Item(pool[newname]).collision='C'
+					oitem=Item(pool[newname])
+					if oitem.collision!='C':
+						oitem.collision='C'
 						self.collision+=1
-					self.geninfo(pool[newname])
+						oitem.name1=oitem.name0
 					item.name1=item.name0
 				else:
 					pool[newname]=curr
@@ -306,14 +311,69 @@ class gBsdConv(object):
 					item.duplication='D'
 					self.duplication+=1
 					item.name1=item.name0
-				item.uname1=self.utf8er.conv(item.name1)
-			elif item.selected==0:
+			else:
+				item.target1=item.target0
 				item.name1=item.name0
-				item.uname1=self.utf8er.conv(item.name1)
-			self.geninfo(curr)
 			if items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = items.iter_next(curr)
+		self.naming_cb_r_sym(parent)
+
+	def naming_cb_r_sym(self, parent): #must be after naming_cb_r, or this may use uncooked name1
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			if item.selected>0:
+				if os.path.islink(item.fullpath):
+					item.target1=self.naming_conv_symlink(curr)
+			self.gen_naming_display(curr)
+			if items.iter_has_child(curr):
+				self.naming_cb_r(curr)
+			curr = items.iter_next(curr)
+
+	def naming_conv_symlink(self, curr):
+		a=self.pathsplit(os.readlink(Item(curr).fullpath))
+		curr=items.iter_parent(curr)
+		if not curr:
+			return os.path.join(*a)
+		curr=items.iter_children(curr)
+		for k,v in enumerate(a):
+			if v=='/':
+				curr=None
+			elif v=='..':
+				curr=items.iter_parent(curr)
+				if not curr:
+					break
+				curr=items.iter_parent(curr)
+				if not curr:
+					break
+				curr=items.iter_children(curr)
+			elif v=='.':
+				pass
+			else:
+				while curr != None:
+					item=Item(curr)
+					if v==item.name0:
+						a[k]=item.name1
+						if items.iter_has_child(curr):
+							curr=items.iter_children(curr)
+						break
+					curr = items.iter_next(curr)
+				if curr == None:
+					break
+		return os.path.join(*a)
+
+	def gen_naming_display(self, curr):
+		item=Item(curr)
+		item.info=''.join((item.error_counter,item.collision,item.duplication))
+		if item.target0=='':
+			item.uname0=self.utf8er.conv(item.name0)
+		else:
+			item.uname0="%s -> %s" % (self.utf8er.conv(item.name0), self.utf8er.conv(item.target0))
+		if item.target1=='':
+			item.uname1=self.utf8er.conv(item.name1)
+		else:
+			item.uname1="%s -> %s" % (self.utf8er.conv(item.name1), self.utf8er.conv(item.target1))
 
 	def getFullNewPath(self, ti):
 		ret=[]
@@ -353,9 +413,13 @@ class gBsdConv(object):
 			if items.iter_has_child(curr):
 				self.naming_convert_r(curr)
 			item=Item(curr)
-			if item.selected>0 and item.name0!=item.name1:
-				os.chdir(os.path.dirname(self.getFullPath(curr)))
-				os.rename(item.name0, item.name1)
+			if item.selected>0 and item.collision=='' and item.duplication=='' and (item.name0!=item.name1 or item.target0!=item.target1):
+				os.chdir(os.path.dirname(item.fullpath))
+				if os.path.islink(item.name0):
+					os.unlink(item.name0)
+					os.symlink(item.target1, item.name1)
+				else:
+					os.rename(item.name0, item.name1)
 				self.counter+=1
 			curr = items.iter_next(curr)
 
@@ -385,9 +449,10 @@ class gBsdConv(object):
 
 	def content_items_select_cb(self, obj):
 		builder = self.builder
-		model, treeiter = obj.get_selected()
+		model, iter = obj.get_selected()
 		if treeiter != None:
-			fullpath = self.getFullPath(treeiter)
+			item=Item(iter)
+			fullpath = item.fullpath
 			if os.path.isfile(fullpath):
 				f=open(fullpath,'r')
 				cnt=f.read()
@@ -411,7 +476,7 @@ class gBsdConv(object):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			fullpath=self.getFullPath(curr)
+			fullpath=item.fullpath
 			if item.selected>=0 and os.path.isfile(fullpath):
 				self.converter.testconv_file(fullpath)
 				info=self.converter.info()
@@ -439,14 +504,23 @@ class gBsdConv(object):
 		while curr != None:
 			item=Item(curr)
 			if item.selected>0:
-				fpath=self.getFullPath(curr)
-				self.converter.conv_file(fpath, fpath)
+				fullpath=item.fullpath
+				self.converter.conv_file(fullpath, fullpath)
 				self.counter+=1
 			if items.iter_has_child(curr):
 				self.content_convert_r(curr)
 			curr = items.iter_next(curr)
 
 	#helper
+	def pathsplit(self, path):
+		a=[path]
+		while len(a[0])>1 and a[0]!='..':
+			t=a.pop(0)
+			p, q = os.path.split(t)
+			a.insert(0, q)
+			a.insert(0, p)
+		return a
+
 	def set_status(self, s):
 		status=self.builder.get_object('status')
 		status.remove_all(0)
@@ -470,18 +544,6 @@ class gBsdConv(object):
 			item.selected=0
 		else:
 			item.selected=1
-
-	def getFullPath(self, ti):
-		ret=[]
-		while ti!=None:
-			item=Item(ti)
-			ret.insert(0, item.name0)
-			ti = items.iter_parent(ti)
-		return os.path.join(*ret)
-
-	def geninfo(self, curr):
-		item=Item(curr)
-		item.info=''.join((item.error_counter,item.collision,item.duplication))
 
 if __name__ == "__main__":
 	app = gBsdConv()

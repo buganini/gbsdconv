@@ -3,8 +3,8 @@ GUI for bsdconv
 Feature:
 	Text conversion
 	Text file conversion
+	File path conversion
 
 Todo:
 	Conversion setting panel
-	File path conversion
 	Mutimetia files metadata conversion
