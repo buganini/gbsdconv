@@ -6,5 +6,6 @@ Feature:
 	File path conversion
 
 Todo:
+	Multi-conversion
 	Conversion setting panel
 	Mutimetia files metadata conversion
