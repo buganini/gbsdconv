@@ -2,23 +2,61 @@
 
 import os
 from bsdconv import *
+from ctypes import *
 from gi.repository import Gtk
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str)
+taglib=CDLL('libtag_c.so')
+
+taglib.taglib_file_new.argtypes=[c_char_p]
+taglib.taglib_file_new.restype=c_void_p
+
+taglib.taglib_file_is_valid.argtypes=[c_void_p]
+taglib.taglib_file_is_valid.restype=c_bool
+
+taglib.taglib_file_free.argtypes=[c_void_p]
+
+taglib.taglib_file_tag.argtypes=[c_void_p]
+taglib.taglib_file_tag.restype=c_void_p
+
+taglib.taglib_tag_title.argtypes=[c_void_p]
+taglib.taglib_tag_title.restype=c_char_p
+
+taglib.taglib_tag_artist.argtypes=[c_void_p]
+taglib.taglib_tag_artist.restype=c_char_p
+
+taglib.taglib_tag_album.argtypes=[c_void_p]
+taglib.taglib_tag_album.restype=c_char_p
+
+taglib.taglib_tag_comment.argtypes=[c_void_p]
+taglib.taglib_tag_comment.restype=c_char_p
+
+taglib.taglib_tag_genre.argtypes=[c_void_p]
+taglib.taglib_tag_genre.restype=c_char_p
+
+taglib.taglib_tag_year.argtypes=[c_void_p]
+taglib.taglib_tag_year.restype=c_uint
+
+taglib.taglib_tag_track.argtypes=[c_void_p]
+taglib.taglib_tag_track.restype=c_uint
+
+
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
 	'info':		2,
 	'name2':	3,	#used by naming operation
 	'name1':	4,	#name2 or name0 if there are duplication or collision
-	'uname0':	5,	#utf8er(name0 + target0)
-	'uname1':	6,	#utf8er(name1 + target1)
-	'uname2':	7,	#utf8er(name2) (unused)
-	'error_counter':8,
-	'collision':	9,
-	'duplication':	10,
-	'target0':	11,	#symlink target0
-	'target1':	12,	#symlink target1
+	'uname0':	5,	#utf8er(name0)
+	'uname1':	6,	#utf8er(name1)
+	'lname0':	7,	#utf8er(name0 + target0)
+	'lname1':	8,	#utf8er(name1 + target1)
+	'uname2':	9,	#utf8er(name2) (unused)
+	'error_counter':10,
+	'collision':	11,
+	'duplication':	12,
+	'target0':	13,	#symlink target0
+	'target1':	14,	#symlink target1
 }
 
 class Item(object):
@@ -76,6 +114,7 @@ class gBsdConv(object):
 		self.operation_text_tab_init()
 		self.operation_naming_tab_init()
 		self.operation_content_tab_init()
+		self.operation_metatag_tab_init()
 
 		#launch
 		self.window.show()
@@ -85,10 +124,14 @@ class gBsdConv(object):
 		operation_tabs = self.builder.get_object("operation_tabs")
 		operation_curr_page = operation_tabs.get_nth_page(operation_tabs.get_current_page())
 		if page == operation_tabs:
-			if operation_curr_page == self.builder.get_object("operation_naming_page"):
+			if operation_curr_page == self.builder.get_object("operation_text_page"):
+				self.text_cb(None)
+			elif operation_curr_page == self.builder.get_object("operation_naming_page"):
 				self.naming_cb()
 			elif operation_curr_page == self.builder.get_object("operation_content_page"):
 				self.content_cb()
+			elif operation_curr_page == self.builder.get_object("operation_metatag_page"):
+				self.metatag_cb()
 
 
 	#Callbacks for items tab
@@ -143,7 +186,7 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', ''])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -240,13 +283,13 @@ class gBsdConv(object):
 		naming.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
 
 		renderer = Gtk.CellRendererText()
-		items_path = Gtk.TreeViewColumn("Path", renderer, text=attr_map['uname0'])
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=attr_map['lname0'])
 		items_path.set_resizable(True)
 		naming.append_column(items_path)
 		naming.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=attr_map['uname1'])
+		items_path2 = Gtk.TreeViewColumn("Result", renderer, text=attr_map['lname1'])
 		items_path2.set_resizable(True)
 		naming.append_column(items_path2)
 
@@ -259,10 +302,14 @@ class gBsdConv(object):
 		self.builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
 	def operation_tabs_cb(self, notebook, page, pagen):
-		if page == self.builder.get_object("operation_naming_page"):
+		if page == self.builder.get_object("operation_text_page"):
+			self.text_cb(None)
+		elif page == self.builder.get_object("operation_naming_page"):
 			self.naming_cb()
 		elif page == self.builder.get_object("operation_content_page"):
 			self.content_cb()
+		elif page == self.builder.get_object("operation_metatag_page"):
+			self.metatag_cb()
 
 	def naming_cb(self):
 		if not self.converter:
@@ -366,14 +413,16 @@ class gBsdConv(object):
 	def gen_naming_display(self, curr):
 		item=Item(curr)
 		item.info=''.join((item.error_counter,item.collision,item.duplication))
+		item.uname0=self.utf8er.conv(item.name0)
 		if item.target0=='':
-			item.uname0=self.utf8er.conv(item.name0)
+			item.lname0=item.uname0
 		else:
-			item.uname0="%s -> %s" % (self.utf8er.conv(item.name0), self.utf8er.conv(item.target0))
+			item.lname0="%s -> %s" % (item.uname0, self.utf8er.conv(item.target0))
+		item.uname1=self.utf8er.conv(item.name1)
 		if item.target1=='':
-			item.uname1=self.utf8er.conv(item.name1)
+			item.lname1=item.uname1
 		else:
-			item.uname1="%s -> %s" % (self.utf8er.conv(item.name1), self.utf8er.conv(item.target1))
+			item.lname1="%s -> %s" % (item.uname1, self.utf8er.conv(item.target1))
 
 	def getFullNewPath(self, ti):
 		ret=[]
@@ -450,7 +499,7 @@ class gBsdConv(object):
 	def content_items_select_cb(self, obj):
 		builder = self.builder
 		model, iter = obj.get_selected()
-		if treeiter != None:
+		if iter != None:
 			item=Item(iter)
 			fullpath = item.fullpath
 			if os.path.isfile(fullpath):
@@ -510,6 +559,58 @@ class gBsdConv(object):
 			if items.iter_has_child(curr):
 				self.content_convert_r(curr)
 			curr = items.iter_next(curr)
+
+	#+Meta Tag
+	def operation_metatag_tab_init(self):
+		metatag_items = self.builder.get_object("metatag_items")
+		toggle=Gtk.CellRendererToggle()
+		toggle.connect("toggled", self.items_toggle_cb)
+		metatag_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
+
+		renderer = Gtk.CellRendererText()
+		items_path = Gtk.TreeViewColumn("Path", renderer, text=attr_map['uname0'])
+		items_path.set_expand(True)
+		metatag_items.append_column(items_path)
+		metatag_items.set_expander_column(items_path)
+
+		renderer = Gtk.CellRendererText()
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		metatag_items.append_column(items_info)
+
+		metatag_items.set_model(items)
+
+		metatag_items_select = metatag_items.get_selection()
+		metatag_items_select.connect("changed", self.metatag_items_select_cb)
+
+		self.builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
+
+	def metatag_cb(self):
+		metatag_items = self.builder.get_object("metatag_items")
+		metatag_items.expand_all()
+
+	def metatag_items_select_cb(self, obj):
+		builder = self.builder
+		model, iter = obj.get_selected()
+		if iter != None:
+			item=Item(iter)
+			fullpath = item.fullpath
+			if os.path.isfile(fullpath):
+				file=taglib.taglib_file_new(fullpath)
+				if taglib.taglib_file_is_valid(file):
+					tag=taglib.taglib_file_tag(file)
+					print taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1').decode('big5')
+					print taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1').decode('big5')
+					print taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1').decode('big5')
+					print taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1').decode('big5')
+					print taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1').decode('big5')
+					print taglib.taglib_tag_year(tag)
+					print taglib.taglib_tag_track(tag)
+				taglib.taglib_file_free(file)
+			else:
+				self.set_status("%s is not a file" % fullpath)
+
+	def metatag_convert(self, obj):
+		pass
 
 	#helper
 	def pathsplit(self, path):
