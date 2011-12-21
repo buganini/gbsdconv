@@ -198,6 +198,7 @@ class gBsdConv(object):
 		self.from_codecs = Gtk.ListStore(str)
 		self.inter_codecs = Gtk.ListStore(str)
 		self.to_codecs = Gtk.ListStore(str)
+		self.profiles = Gtk.ListStore(str, str)
 
 		codecs=codecs_list(FROM)
 		for codec in codecs:
@@ -209,32 +210,63 @@ class gBsdConv(object):
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
-		text_convert = self.builder.get_object("conversion_generate")
-		text_convert.connect("clicked", self.generate_cb)
+		self.profiles.append(['Taiwan','big5:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['China','gbk:zhcn:utf-8;utf-8:zhcn:utf-8'])
+
+		from_codecs=self.builder.get_object('from_codecs')
+		renderer=Gtk.CellRendererText()
+		from_codecs.pack_start(renderer, False)
+		from_codecs.add_attribute(renderer, "text", 0)
+		from_codecs.set_model(self.from_codecs)
+		from_codecs.set_active(0)
+
+		inter_codecs=self.builder.get_object('inter_codecs')
+		renderer=Gtk.CellRendererText()
+		inter_codecs.pack_start(renderer, False)
+		inter_codecs.add_attribute(renderer, "text", 0)
+		inter_codecs.set_model(self.inter_codecs)
+		inter_codecs.set_active(0)
+
+		to_codecs=self.builder.get_object('to_codecs')
+		renderer=Gtk.CellRendererText()
+		to_codecs.pack_start(renderer, False)
+		to_codecs.add_attribute(renderer, "text", 0)
+		to_codecs.set_model(self.to_codecs)
+		to_codecs.set_active(0)
+
+		profiles=self.builder.get_object('profiles')
+		renderer=Gtk.CellRendererText()
+		profiles.pack_start(renderer, False)
+		profiles.add_attribute(renderer, "text", 0)
+		profiles.set_model(self.profiles)
+		profiles.set_active(0)
+
+		self.builder.get_object("from_add").connect("clicked", self.from_add_cb)
+		self.builder.get_object("inter_add").connect("clicked", self.inter_add_cb)
+		self.builder.get_object("to_add").connect("clicked", self.to_add_cb)
+		self.builder.get_object("profile_add").connect("clicked", self.profile_add_cb)
 
 		self.builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
-		self.builder.get_object("conversion_add").connect('clicked', self.conversion_add_cb)
-		self.builder.get_object("conversion_add").clicked()
-	def generate_cb(self, obj):
-		conversion=[]
-		builder = self.builder
+	def from_add_cb(self, obj):
+		iter=self.builder.get_object('from_codecs').get_active_iter()
+		conversion=self.builder.get_object("conversion")
+		conversion.set_text('%s%s:' % (conversion.get_text(), self.from_codecs[iter][0]))
+		
+	def inter_add_cb(self, obj):
+		iter=self.builder.get_object('inter_codecs').get_active_iter()
+		conversion=self.builder.get_object("conversion")
+		conversion.set_text('%s%s:' % (conversion.get_text(), self.inter_codecs[iter][0]))
 
-		conversion.append(builder.get_object("from_codecs").get_active_text())
+	def to_add_cb(self, obj):
+		iter=self.builder.get_object('to_codecs').get_active_iter()
+		conversion=self.builder.get_object("conversion")
+		conversion.set_text('%s%s:' % (conversion.get_text(), self.to_codecs[iter][0]))
 
-		ignoring_whitespaces=builder.get_object("chk_ignoring_whitespace")
-
-		if ignoring_whitespaces.get_active():
-			conversion.append('WHITESPACE-DERAIL')
-
-		if ignoring_whitespaces.get_active():
-			conversion.append('WHITESPACE-RERAIL')
-
-		conversion.append(builder.get_object("to_codecs").get_active_text())
-
-		print builder.get_object("to_codecs")
-		print conversion
-		builder.get_object("conversion").set_text(':'.join(conversion))
+	def profile_add_cb(self, obj):
+		iter=self.builder.get_object('profiles').get_active_iter()
+		conversion=self.builder.get_object("conversion")
+		conversion.set_text('%s%s' % (conversion.get_text(), self.profiles[iter][1]))
 
 	def conversion_apply_cb(self, obj):
 		self.converter = Bsdconv(self.builder.get_object("conversion").get_text())
@@ -242,19 +274,6 @@ class gBsdConv(object):
 			self.set_status(str(self.converter))
 		else:
 			self.set_status(error())
-
-	def conversion_add_cb(self, obj):
-		conversion = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-		conversion.set_visible(True)
-		self.builder.get_object('conversions').pack_start(conversion, False, False, 0)
-		for codecs in (self.from_codecs, self.inter_codecs, self.to_codecs):
-			obj_codecs=Gtk.ComboBox.new_with_model(codecs)
-			obj_codecs.set_visible(True)
-			conversion.pack_start(obj_codecs, False, False, 0)
-			renderer=Gtk.CellRendererText()
-			obj_codecs.pack_start(renderer, False)
-			obj_codecs.add_attribute(renderer, "text", 0)
-			obj_codecs.set_active(0)
 
 	#Callbacks for operation tab
 	#+Text
