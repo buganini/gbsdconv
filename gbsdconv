@@ -600,20 +600,25 @@ class gBsdConv(object):
 			fullpath = item.fullpath
 			if os.path.isfile(fullpath):
 				file=taglib.taglib_file_new(fullpath)
-				if taglib.taglib_file_is_valid(file):
-					tree=Gtk.TreeStore(str, str)
-					metatag_origin=self.builder.get_object('metatag_origin')
-					metatag_origin.set_model(tree)
-					tag=taglib.taglib_file_tag(file)
-					tree.append(None, ['Title', self.utf8er.conv(taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
-					tree.append(None, ['Artist', self.utf8er.conv(taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
-					tree.append(None, ['Album', self.utf8er.conv(taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
-					tree.append(None, ['Comment', self.utf8er.conv(taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
-					tree.append(None, ['Genre', self.utf8er.conv(taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
-					tree.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
-					tree.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
-					metatag_origin.expand_all()
-				taglib.taglib_file_free(file)
+				if file!=None:
+					if taglib.taglib_file_is_valid(file):
+						tree=Gtk.TreeStore(str, str)
+						metatag_origin=self.builder.get_object('metatag_origin')
+						metatag_origin.set_model(tree)
+						tag=taglib.taglib_file_tag(file)
+						tree.append(None, ['Title', self.utf8er.conv(taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
+						tree.append(None, ['Artist', self.utf8er.conv(taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
+						tree.append(None, ['Album', self.utf8er.conv(taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
+						tree.append(None, ['Comment', self.utf8er.conv(taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
+						tree.append(None, ['Genre', self.utf8er.conv(taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1').decode('big5').encode('utf-8'))])
+						tree.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
+						tree.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
+						metatag_origin.expand_all()
+					else:
+						self.set_status("%s is not a valid file" % fullpath)
+					taglib.taglib_file_free(file)
+				else:
+					self.set_status("%s is not a valid file" % fullpath)
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
