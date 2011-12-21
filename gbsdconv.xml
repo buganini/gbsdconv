@@ -425,7 +425,7 @@
                       <object class="GtkLabel" id="label12">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">From/To encoding should be UTF-8.</property>
+                        <property name="label" translatable="yes">From/To encoding should be UTF-8</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -760,6 +760,18 @@
                             <property name="can_focus">False</property>
                             <property name="orientation">vertical</property>
                             <child>
+                              <object class="GtkLabel" id="label11">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Conversion must output UTF-8</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
                               <object class="GtkCheckButton" id="chk_remove_id3v1">
                                 <property name="label" translatable="yes">Remove ID3v1</property>
                                 <property name="use_action_appearance">False</property>
@@ -773,7 +785,7 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">0</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -790,7 +802,7 @@
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">True</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                             <child>
@@ -801,7 +813,7 @@
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">2</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                           </object>
