@@ -201,12 +201,15 @@ class gBsdConv(object):
 		self.profiles = Gtk.ListStore(str, str)
 
 		codecs=codecs_list(FROM)
+		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.from_codecs.append([codec])
 		codecs=codecs_list(INTER)
+		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.inter_codecs.append([codec])
 		codecs=codecs_list(TO)
+		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
@@ -247,6 +250,16 @@ class gBsdConv(object):
 		self.builder.get_object("profile_add").connect("clicked", self.profile_add_cb)
 
 		self.builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
+
+	def _cmp(self, x,y):
+		a,b=x,y
+		if x[0]=='_':
+			a=x[1:]
+		if y[0]=='_':
+			b=y[1:]
+		if x==y:
+			return cmp(x, y)
+		return cmp(a, b)
 
 	def from_add_cb(self, obj):
 		iter=self.builder.get_object('from_codecs').get_active_iter()
