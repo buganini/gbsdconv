@@ -11,3 +11,4 @@ Todo:
 	Metatag operation: remove id3v1
 	Metatag operation: write id3v2.3
 	Filetype filter
+	Utilizing scoring in bsdconv to choose conversion
