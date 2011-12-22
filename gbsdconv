@@ -359,6 +359,8 @@ class gBsdConv(object):
 
 		self.builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
+		self.last_add=None
+
 	def _cmp(self, x,y):
 		a,b=x,y
 		if x[0]=='_':
@@ -372,22 +374,54 @@ class gBsdConv(object):
 	def from_add_cb(self, obj):
 		iter=self.builder.get_object('from_codecs').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s:' % (conversion.get_text(), self.from_codecs[iter][0]))
+		op={
+			None:'',
+			'from':',',
+			'inter':':locale|',
+			'to':'|',
+			'profile':';',
+		}
+		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.from_codecs[iter][0]))
+		self.last_add='from'
 		
 	def inter_add_cb(self, obj):
 		iter=self.builder.get_object('inter_codecs').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s:' % (conversion.get_text(), self.inter_codecs[iter][0]))
+		op={
+			None:'',
+			'from':':',
+			'inter':':',
+			'to':'|locale:',
+			'profile':';locale:',
+		}
+		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.inter_codecs[iter][0]))
+		self.last_add='inter'
 
 	def to_add_cb(self, obj):
 		iter=self.builder.get_object('to_codecs').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s|' % (conversion.get_text(), self.to_codecs[iter][0]))
+		op={
+			None:'',
+			'from':':',
+			'inter':':',
+			'to':'|locale:',
+			'profile':';locale:',
+		}
+		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.to_codecs[iter][0]))
+		self.last_add='to'
 
 	def profile_add_cb(self, obj):
 		iter=self.builder.get_object('profiles').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s;' % (conversion.get_text(), self.profiles[iter][1]))
+		op={
+			None:'',
+			'from':':locale;',
+			'inter':':locale;',
+			'to':';',
+			'profile':';',
+		}
+		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.profiles[iter][1]))
+		self.last_add='profile'
 
 	def conversion_apply_cb(self, obj):
 		self.converter = Bsdconvs(self.builder.get_object("conversion").get_text())
