@@ -16,7 +16,6 @@
 
 """
 
-
 import os
 from bsdconv import *
 from ctypes import *
@@ -202,7 +201,7 @@ class gBsdConv(object):
 	def __init__(self):
 
 		self.builder = builder = Gtk.Builder()
-		builder.add_from_file("gbsdconv.xml")
+		builder.add_from_file("/usr/local/share/gbsdconv/gbsdconv.xml")
 		self.window = builder.get_object("main_window")
 		self.window.connect("delete-event", Gtk.main_quit)
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
