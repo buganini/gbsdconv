@@ -260,14 +260,10 @@ class gBsdConv(object):
 		items_view.set_expander_column(items_path)
 		items_view.set_model(items)
 
-		item_add = self.builder.get_object("item_add")
-		item_add.connect("clicked", self.item_add_cb)
-
-		item_add_r = self.builder.get_object("item_add_r")
-		item_add_r.connect("clicked", self.item_add_cb)
-
-		item_remove = self.builder.get_object("item_remove")
-		item_remove.connect("clicked", self.item_remove_cb)
+		self.builder.get_object("item_add").connect("clicked", self.item_add_cb)
+		self.builder.get_object("item_add_r").connect("clicked", self.item_add_cb)
+		self.builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
+		self.builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
 	def item_add_cb(self, obj):
 		builder = self.builder
@@ -307,6 +303,21 @@ class gBsdConv(object):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
 		if treeiter:
 			model.remove(treeiter)
+
+	def item_remove_selected_leaves_cb(self, obj):
+		self.item_remove_selected_leaves_cb_r(None)
+
+	def item_remove_selected_leaves_cb_r(self, parent):
+		curr = items.iter_children(parent)
+		while curr != None:
+			next=items.iter_next(curr)
+			if items.iter_has_child(curr):
+				self.item_remove_selected_leaves_cb_r(curr)
+			else:
+				item=Item(curr)
+				if item.selected>0:
+					items.remove(curr)
+			curr = next
 
 	#Callbacks for conversion tab
 	def conversion_tab_init(self):
