@@ -4,8 +4,7 @@ Feature:
 	Text conversion
 	Text file conversion
 	File path conversion
+	Multi-conversion
 
 Todo:
-	Multi-conversion
-	Conversion setting panel
 	Mutimetia files metadata conversion

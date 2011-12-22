@@ -76,6 +76,97 @@ attr_map={
 	'target1':	14,	#symlink target1
 }
 
+class Bsdconvs(object):
+	def __init__(self, conversion):
+		cs=conversion.strip(',:|;').split(';')
+		self.conversions=[]
+		self.cache={}
+		self.lastc=0
+		for c in cs:
+			h=Bsdconv(c)
+			if not h:
+				self.errorstr=error()
+				self.conversions=[]
+				return
+			else:
+				self.conversions.append(h)
+
+	def __bool__(self):
+		if self.conversions==[]:
+			return False
+		return True
+
+	def __nonzero__(self):
+		return self.__bool__()
+
+	def __str__(self):
+		return ';'.join([x.split('"')[1] for x in [str(x) for x in self.conversions]])
+
+	def conv(self, s):
+		for k,c in enumerate(self.conversions):
+			s=c.conv(s)
+			i=c.info()
+			err=i['ierr']+i['oerr']
+			if k==0:
+				self.lastc=0
+				e=err
+				r=s
+			elif err<e:
+				self.lastc=k
+				e=err
+				r=s
+		return r
+
+	def conv_list(self, a):
+		for k,c in enumerate(self.conversions):
+			err=0
+			for s in a:
+				c.testconv(s)
+				i=c.info()
+				err+=i['ierr']+i['oerr']
+			if k==0:
+				self.lastc=0
+				e=err
+			elif err<e:
+				self.lastc=k
+				e=err
+		return [self.conversions[self.lastc].conv(s) for s in a]
+
+	def conv_file(self, ifile, ofile):
+		for k,c in enumerate(self.conversions):
+			s=c.conv(str)
+			i=c.info()
+			err=i['ierr']+i['oerr']
+			if k==0:
+				self.lastc=0
+				e=err
+				r=s
+			elif err<e:
+				self.lastc=k
+				e=err
+				r=s			
+		self.conversions[self.lastc].conv_file(ifile, ofile)
+		return r
+		
+	def testconv_file(self, str):
+		for k,c in enumerate(self.conversions):
+			c.testconv_file(str)
+			i=c.info()
+			err=i['ierr']+i['oerr']
+			if k==0:
+				self.lastc=0
+				e=i['ierr']+i['oerr']
+			elif err<e:
+				self.lastc=k
+				e=err
+		return
+
+	def info(self):
+		return self.conversions[self.lastc].info()
+
+	def error(self):
+		return self.errorstr
+
 class Item(object):
 	def __init__(self, iter):
 		self.iter=iter
@@ -116,7 +207,7 @@ class gBsdConv(object):
 		self.err_counter_selected = 0
 		self.collision = 0
 		self.duplication = 0
-		self.converter = Bsdconv("BYTE:BYTE")		
+		self.converter = Bsdconvs("BYTE:BYTE")		
 		
 		self.inter_codecs = {}
 
@@ -230,8 +321,8 @@ class gBsdConv(object):
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
-		self.profiles.append(['Taiwan','big5:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
-		self.profiles.append(['China','gbk:zhcn:utf-8;utf-8:zhcn:utf-8'])
+		self.profiles.append(['Taiwan','utf-8:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['China','utf-8:zhcn:utf-8;gbk:zhcn:utf-8'])
 
 		from_codecs=self.builder.get_object('from_codecs')
 		renderer=Gtk.CellRendererText()
@@ -291,19 +382,19 @@ class gBsdConv(object):
 	def to_add_cb(self, obj):
 		iter=self.builder.get_object('to_codecs').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s:' % (conversion.get_text(), self.to_codecs[iter][0]))
+		conversion.set_text('%s%s|' % (conversion.get_text(), self.to_codecs[iter][0]))
 
 	def profile_add_cb(self, obj):
 		iter=self.builder.get_object('profiles').get_active_iter()
 		conversion=self.builder.get_object("conversion")
-		conversion.set_text('%s%s' % (conversion.get_text(), self.profiles[iter][1]))
+		conversion.set_text('%s%s;' % (conversion.get_text(), self.profiles[iter][1]))
 
 	def conversion_apply_cb(self, obj):
-		self.converter = Bsdconv(self.builder.get_object("conversion").get_text())
+		self.converter = Bsdconvs(self.builder.get_object("conversion").get_text())
 		if self.converter:
 			self.set_status(str(self.converter))
 		else:
-			self.set_status(error())
+			self.set_status(self.converter.error())
 
 	#Callbacks for operation tab
 	#+Text
@@ -680,11 +771,13 @@ class gBsdConv(object):
 						origin.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
 						origin.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
 
-						result.append(None, ['Title', self.utf8er.conv(self.converter.conv(title))])
-						result.append(None, ['Artist', self.utf8er.conv(self.converter.conv(artist))])
-						result.append(None, ['Album', self.utf8er.conv(self.converter.conv(album))])
-						result.append(None, ['Comment', self.utf8er.conv(self.converter.conv(comment))])
-						result.append(None, ['Genre', self.utf8er.conv(self.converter.conv(genre))])
+						origin_tag=[title, artist, album, comment, genre]
+						result_tag=self.converter.conv_list(origin_tag)
+						result.append(None, ['Title', self.utf8er.conv(result_tag[0])])
+						result.append(None, ['Artist', self.utf8er.conv(result_tag[1])])
+						result.append(None, ['Album', self.utf8er.conv(result_tag[2])])
+						result.append(None, ['Comment', self.utf8er.conv(result_tag[3])])
+						result.append(None, ['Genre', self.utf8er.conv(result_tag[4])])
 						result.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
 						result.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
 
