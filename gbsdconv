@@ -212,7 +212,7 @@ class gBsdConv(object):
 		self.err_counter_selected = 0
 		self.collision = 0
 		self.duplication = 0
-		self.converter = Bsdconvs("BYTE:BYTE")		
+		self.converter = Bsdconvs("")		
 		
 		self.inter_codecs = {}
 
@@ -228,6 +228,10 @@ class gBsdConv(object):
 		self.operation_naming_tab_init()
 		self.operation_content_tab_init()
 		self.operation_metatag_tab_init()
+
+		#XXX not implemented
+		#builder.get_object('chk_remove_id3v1').hide()
+		#builder.get_object('chk_use_id3v2_3').hide()
 
 		#launch
 		self.window.show()
@@ -811,13 +815,13 @@ class gBsdConv(object):
 						origin.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
 						origin.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
 
-						origin_tag=[title, artist, album, comment, genre]
-						result_tag=self.converter.conv_list(origin_tag)
-						result.append(None, ['Title', self.utf8er.conv(result_tag[0])])
-						result.append(None, ['Artist', self.utf8er.conv(result_tag[1])])
-						result.append(None, ['Album', self.utf8er.conv(result_tag[2])])
-						result.append(None, ['Comment', self.utf8er.conv(result_tag[3])])
-						result.append(None, ['Genre', self.utf8er.conv(result_tag[4])])
+						title, artist, album, comment, genre=self.metatag_conv_tag(title, artist, album, comment, genre)
+
+						result.append(None, ['Title', self.utf8er.conv(title)])
+						result.append(None, ['Artist', self.utf8er.conv(artist)])
+						result.append(None, ['Album', self.utf8er.conv(album)])
+						result.append(None, ['Comment', self.utf8er.conv(comment)])
+						result.append(None, ['Genre', self.utf8er.conv(genre)])
 						result.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
 						result.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
 
@@ -857,13 +861,18 @@ class gBsdConv(object):
 						comment=self.latin1(taglib.taglib_tag_comment(tag))
 						genre=self.latin1(taglib.taglib_tag_genre(tag))
 
-						origin_tag=[title, artist, album, comment, genre]
-						result_tag=self.converter.conv_list(origin_tag)
-						taglib.taglib_tag_set_title(tag, result_tag[0])
-						taglib.taglib_tag_set_artist(tag, result_tag[1])
-						taglib.taglib_tag_set_album(tag, result_tag[2])
-						taglib.taglib_tag_set_comment(tag, result_tag[3])
-						taglib.taglib_tag_set_genre(tag, result_tag[4])
+						title, artist, album, comment, genre=self.metatag_conv_tag(title, artist, album, comment, genre)
+
+						if not self.builder.get_object('chk_skip_title').get_active():
+							taglib.taglib_tag_set_title(tag, title)
+						if not self.builder.get_object('chk_skip_artist').get_active():
+							taglib.taglib_tag_set_artist(tag, artist)
+						if not self.builder.get_object('chk_skip_album').get_active():
+							taglib.taglib_tag_set_album(tag, album)
+						if not self.builder.get_object('chk_skip_comment').get_active():
+							taglib.taglib_tag_set_comment(tag, comment)
+						if not self.builder.get_object('chk_skip_genre').get_active():
+							taglib.taglib_tag_set_genre(tag, genre)
 
 						taglib.taglib_file_save(mfile)
 						taglib.taglib_tag_free_strings()
@@ -872,6 +881,31 @@ class gBsdConv(object):
 			if items.iter_has_child(curr):
 				self.metatag_convert_r(curr)
 			curr = items.iter_next(curr)
+
+	def metatag_conv_tag(self, title, artist, album, comment, genre):
+		a=[title, artist, album, comment, genre]
+		if self.builder.get_object('chk_skip_title').get_active():
+			a[0]=''
+		if self.builder.get_object('chk_skip_artist').get_active():
+			a[1]=''
+		if self.builder.get_object('chk_skip_album').get_active():
+			a[2]=''
+		if self.builder.get_object('chk_skip_comment').get_active():
+			a[3]=''
+		if self.builder.get_object('chk_skip_genre').get_active():
+			a[4]=''
+		a=self.converter.conv_list(a)
+		if self.builder.get_object('chk_skip_title').get_active():
+			a[0]=title
+		if self.builder.get_object('chk_skip_artist').get_active():
+			a[1]=artist
+		if self.builder.get_object('chk_skip_album').get_active():
+			a[2]=album
+		if self.builder.get_object('chk_skip_comment').get_active():
+			a[3]=comment
+		if self.builder.get_object('chk_skip_genre').get_active():
+			a[4]=genre
+		return a
 
 	#helper
 	def latin1(self, s):
