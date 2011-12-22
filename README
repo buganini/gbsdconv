@@ -1,11 +1,13 @@
 GUI for bsdconv
 
 Feature:
+	Multi-conversion
 	Text conversion
 	Text file conversion
 	File path conversion
-	Multi-conversion
+	Mutimetia files metadata conversion
 
 Todo:
-	Mutimetia files metadata conversion
+	Metatag operation: remove id3v1
+	Metatag operation: write id3v2.3
 	Filetype filter

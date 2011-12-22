@@ -28,7 +28,10 @@ taglib.taglib_file_new.argtypes=[c_char_p]
 taglib.taglib_file_new.restype=c_void_p
 
 taglib.taglib_file_is_valid.argtypes=[c_void_p]
-taglib.taglib_file_is_valid.restype=c_bool
+taglib.taglib_file_is_valid.restype=c_int
+
+taglib.taglib_file_save.argtypes=[c_void_p]
+taglib.taglib_file_save.restype=c_int
 
 taglib.taglib_file_free.argtypes=[c_void_p]
 
@@ -55,6 +58,12 @@ taglib.taglib_tag_year.restype=c_uint
 
 taglib.taglib_tag_track.argtypes=[c_void_p]
 taglib.taglib_tag_track.restype=c_uint
+
+taglib.taglib_tag_set_title.argtypes=[c_void_p, c_char_p]
+taglib.taglib_tag_set_artist.argtypes=[c_void_p, c_char_p]
+taglib.taglib_tag_set_album.argtypes=[c_void_p, c_char_p]
+taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
+taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
 
 
 items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
@@ -134,19 +143,17 @@ class Bsdconvs(object):
 
 	def conv_file(self, ifile, ofile):
 		for k,c in enumerate(self.conversions):
-			s=c.conv(str)
+			c.testconv_file(ifile)
 			i=c.info()
 			err=i['ierr']+i['oerr']
 			if k==0:
 				self.lastc=0
 				e=err
-				r=s
 			elif err<e:
 				self.lastc=k
 				e=err
-				r=s			
 		self.conversions[self.lastc].conv_file(ifile, ofile)
-		return r
+		return
 		
 	def testconv_file(self, str):
 		for k,c in enumerate(self.conversions):
@@ -787,10 +794,10 @@ class gBsdConv(object):
 			metatag_result.set_model(result)
 
 			if os.path.isfile(fullpath):
-				file=taglib.taglib_file_new(fullpath)
-				if file!=None:
-					if taglib.taglib_file_is_valid(file):
-						tag=taglib.taglib_file_tag(file)
+				mfile=taglib.taglib_file_new(fullpath)
+				if mfile!=None:
+					if taglib.taglib_file_is_valid(mfile):
+						tag=taglib.taglib_file_tag(mfile)
 						title=taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1')
 						artist=taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1')
 						album=taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1')
@@ -815,19 +822,57 @@ class gBsdConv(object):
 						result.append(None, ['Year', str(taglib.taglib_tag_year(tag))])
 						result.append(None, ['Track', str(taglib.taglib_tag_track(tag))])
 
+						taglib.taglib_tag_free_strings()
 
 						metatag_origin.expand_all()
 						metatag_result.expand_all()
 					else:
 						self.set_status("%s is not a valid file" % fullpath)
-					taglib.taglib_file_free(file)
+					taglib.taglib_file_free(mfile)
 				else:
 					self.set_status("%s is not a valid file" % fullpath)
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
 	def metatag_convert(self, obj):
-		pass
+		if not self.converter:
+			return
+		self.counter=0
+		self.metatag_convert_r(None)
+		self.set_status('%d files converted' % self.counter)
+		
+	def metatag_convert_r(self, parent):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			fullpath=item.fullpath
+			if item.selected>0 and os.path.isfile(fullpath):
+				mfile=taglib.taglib_file_new(fullpath)
+				if mfile!=None:
+					if taglib.taglib_file_is_valid(mfile):
+						tag=taglib.taglib_file_tag(mfile)
+
+						title=taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1')
+						artist=taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1')
+						album=taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1')
+						comment=taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1')
+						genre=self.utf8er.conv(taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1'))
+
+						origin_tag=[title, artist, album, comment, genre]
+						result_tag=self.converter.conv_list(origin_tag)
+						taglib.taglib_tag_set_title(tag, result_tag[0])
+						taglib.taglib_tag_set_artist(tag, result_tag[1])
+						taglib.taglib_tag_set_album(tag, result_tag[2])
+						taglib.taglib_tag_set_comment(tag, result_tag[3])
+						taglib.taglib_tag_set_genre(tag, result_tag[4])
+
+						taglib.taglib_file_save(mfile)
+						taglib.taglib_tag_free_strings()
+					taglib.taglib_file_free(mfile)
+				self.counter+=1
+			if items.iter_has_child(curr):
+				self.metatag_convert_r(curr)
+			curr = items.iter_next(curr)
 
 	#helper
 	def pathsplit(self, path):
