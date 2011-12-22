@@ -87,6 +87,7 @@ attr_map={
 class Bsdconvs(object):
 	def __init__(self, conversion):
 		cs=conversion.strip(',:|;').split(';')
+		self.failed=False
 		self.conversions=[]
 		self.cache={}
 		self.lastc=0
@@ -94,15 +95,13 @@ class Bsdconvs(object):
 			h=Bsdconv(c)
 			if not h:
 				self.errorstr=error()
-				self.conversions=[]
-				return
+				self.failed=True
+				self.conversions=[Bsdconv('BYTE:BYTE')]
 			else:
 				self.conversions.append(h)
 
 	def __bool__(self):
-		if self.conversions==[]:
-			return False
-		return True
+		return self.failed
 
 	def __nonzero__(self):
 		return self.__bool__()
@@ -212,7 +211,7 @@ class gBsdConv(object):
 		self.err_counter_selected = 0
 		self.collision = 0
 		self.duplication = 0
-		self.converter = Bsdconvs("")		
+		self.converter = Bsdconvs("")
 		
 		self.inter_codecs = {}
 
@@ -447,8 +446,6 @@ class gBsdConv(object):
 
 	def text_cb(self, obj):
 		builder = self.builder
-		if not self.converter:
-			return
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
@@ -495,8 +492,6 @@ class gBsdConv(object):
 			self.metatag_cb()
 
 	def naming_cb(self):
-		if not self.converter:
-			return
 		naming = self.builder.get_object("naming")
 		self.err_counter=0
 		self.err_counter_selected=0
@@ -633,8 +628,6 @@ class gBsdConv(object):
 		self.naming_cb_r(items.iter_parent(iter))
 
 	def naming_convert(self, obj):
-		if not self.converter:
-			return
 		self.counter=0
 		self.naming_convert_r(None)
 		self.set_status('%d dirs/files converted' % self.counter)
@@ -690,15 +683,11 @@ class gBsdConv(object):
 				cnt=f.read()
 				builder.get_object("content_origin").get_buffer().set_text(self.utf8er.conv(cnt))
 				f.close()
-				if not self.converter:
-					return
 				builder.get_object("content_result").get_buffer().set_text(self.utf8er.conv(self.converter.conv(cnt)))
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
 	def content_cb(self):
-		if not self.converter:
-			return
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
@@ -725,8 +714,6 @@ class gBsdConv(object):
 			curr = items.iter_next(curr)
 
 	def content_convert(self, obj):
-		if not self.converter:
-			return
 		self.counter=0
 		self.content_convert_r(None)
 		self.set_status('%d files converted' % self.counter)
@@ -838,8 +825,6 @@ class gBsdConv(object):
 				self.set_status("%s is not a file" % fullpath)
 
 	def metatag_convert(self, obj):
-		if not self.converter:
-			return
 		self.counter=0
 		self.metatag_convert_r(None)
 		self.set_status('%d files converted' % self.counter)
