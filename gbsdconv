@@ -101,7 +101,7 @@ class Bsdconvs(object):
 				self.conversions.append(h)
 
 	def __bool__(self):
-		return self.failed
+		return not self.failed
 
 	def __nonzero__(self):
 		return self.__bool__()
@@ -760,15 +760,21 @@ class gBsdConv(object):
 		metatag_result.append_column(Gtk.TreeViewColumn("Key", Gtk.CellRendererText(), text=0))
 		metatag_result.append_column(Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=1))
 
+		self.builder.get_object('chk_skip_title').connect('clicked', self.metatag_items_select_cb)
+		self.builder.get_object('chk_skip_artist').connect('clicked', self.metatag_items_select_cb)
+		self.builder.get_object('chk_skip_album').connect('clicked', self.metatag_items_select_cb)
+		self.builder.get_object('chk_skip_comment').connect('clicked', self.metatag_items_select_cb)
+		self.builder.get_object('chk_skip_genre').connect('clicked', self.metatag_items_select_cb)
+
 		self.builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
 
 	def metatag_cb(self):
 		metatag_items = self.builder.get_object("metatag_items")
 		metatag_items.expand_all()
+		self.metatag_items_select_cb(None)
 
 	def metatag_items_select_cb(self, obj):
-		builder = self.builder
-		model, iter = obj.get_selected()
+		model, iter = self.builder.get_object('metatag_items').get_selection().get_selected()
 		if iter != None:
 			item=Item(iter)
 			fullpath = item.fullpath
