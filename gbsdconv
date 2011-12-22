@@ -206,7 +206,6 @@ class gBsdConv(object):
 		self.window = builder.get_object("main_window")
 		self.window.connect("delete-event", Gtk.main_quit)
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
-		builder.get_object("conversion").set_text("BYTE:BYTE")
 
 		#Global objects
 		self.counter = 0
@@ -798,11 +797,12 @@ class gBsdConv(object):
 				if mfile!=None:
 					if taglib.taglib_file_is_valid(mfile):
 						tag=taglib.taglib_file_tag(mfile)
-						title=taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1')
-						artist=taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1')
-						album=taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1')
-						comment=taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1')
-						genre=self.utf8er.conv(taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1'))
+
+						title=self.latin1(taglib.taglib_tag_title(tag))
+						artist=self.latin1(taglib.taglib_tag_artist(tag))
+						album=self.latin1(taglib.taglib_tag_album(tag))
+						comment=self.latin1(taglib.taglib_tag_comment(tag))
+						genre=self.latin1(taglib.taglib_tag_genre(tag))
 
 						origin.append(None, ['Title', self.utf8er.conv(title)])
 						origin.append(None, ['Artist', self.utf8er.conv(artist)])
@@ -852,11 +852,11 @@ class gBsdConv(object):
 					if taglib.taglib_file_is_valid(mfile):
 						tag=taglib.taglib_file_tag(mfile)
 
-						title=taglib.taglib_tag_title(tag).decode('utf-8').encode('latin1')
-						artist=taglib.taglib_tag_artist(tag).decode('utf-8').encode('latin1')
-						album=taglib.taglib_tag_album(tag).decode('utf-8').encode('latin1')
-						comment=taglib.taglib_tag_comment(tag).decode('utf-8').encode('latin1')
-						genre=self.utf8er.conv(taglib.taglib_tag_genre(tag).decode('utf-8').encode('latin1'))
+						title=self.latin1(taglib.taglib_tag_title(tag))
+						artist=self.latin1(taglib.taglib_tag_artist(tag))
+						album=self.latin1(taglib.taglib_tag_album(tag))
+						comment=self.latin1(taglib.taglib_tag_comment(tag))
+						genre=self.latin1(taglib.taglib_tag_genre(tag))
 
 						origin_tag=[title, artist, album, comment, genre]
 						result_tag=self.converter.conv_list(origin_tag)
@@ -875,6 +875,13 @@ class gBsdConv(object):
 			curr = items.iter_next(curr)
 
 	#helper
+	def latin1(self, s):
+		try:
+			s=s.decode('utf-8').encode('latin1')
+		except:
+			pass
+		return s
+
 	def pathsplit(self, path):
 		a=[path]
 		while len(a[0])>1 and a[0]!='..':
