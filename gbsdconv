@@ -19,6 +19,8 @@
 import os
 from bsdconv import *
 from ctypes import *
+from datetime import datetime
+from time import mktime
 from gi.repository import Gtk
 
 taglib=CDLL('libtag_c.so')
@@ -65,7 +67,7 @@ taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
 taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
 
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, float)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
@@ -82,6 +84,7 @@ attr_map={
 	'duplication':	12,
 	'target0':	13,	#symlink target0
 	'target1':	14,	#symlink target1
+	'atime':	15
 }
 
 class Bsdconvs(object):
@@ -228,10 +231,6 @@ class gBsdConv(object):
 		self.operation_content_tab_init()
 		self.operation_metatag_tab_init()
 
-		#XXX not implemented
-		#builder.get_object('chk_remove_id3v1').hide()
-		#builder.get_object('chk_use_id3v2_3').hide()
-
 		#launch
 		self.window.show()
 
@@ -302,7 +301,7 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', '', 0.0])
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
@@ -934,10 +933,24 @@ class gBsdConv(object):
 	def items_toggle_cb(self, renderer, path):
 		iter=items.get_iter(path)
 		item=Item(iter)
-		if item.selected:
+		t=datetime.now()
+		now=mktime(t.timetuple())+1e-6*t.microsecond
+		if now-item.atime<=0.2:
+			if items.iter_has_child(iter):
+				self.item_toggle_set_r(items.iter_children(iter), item.selected)
+		elif item.selected:
 			item.selected=0
 		else:
 			item.selected=1
+		item.atime=now
+
+	def item_toggle_set_r(self, iter, v):
+		while iter!=None:
+			item=Item(iter)
+			item.selected=v
+			if items.iter_has_child(iter):
+				self.item_toggle_set_r(items.iter_children(iter), v)
+			iter=items.iter_next(iter)
 
 if __name__ == "__main__":
 	app = gBsdConv()
