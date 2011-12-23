@@ -285,7 +285,7 @@ class gBsdConv(object):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			if item.selected>=0:
+			if item.selected>0:
 				s=0
 				for e in ext:
 					if item.name0.endswith(e):
