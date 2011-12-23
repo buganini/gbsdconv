@@ -266,7 +266,7 @@ class gBsdConv(object):
 		self.builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
 		self.filter_profiles = Gtk.ListStore(str, str)
-		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
+		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.cc;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
 		self.filter_profiles.append(['Multimedia', '.ogg;.flac;.oga;.mp3;.mpc;.wv;.spx;.tta;.m4a;.m4r;.m4b;.m4p;.3g2;.mp4;.wma;.asf;.aif;.aiff;.wav;.ape;.mod;.module;.nst;.wow;.s3m;.it;.xm'])
 		filter_profiles=self.builder.get_object('filter_profiles')
 		renderer=Gtk.CellRendererText()
@@ -274,6 +274,27 @@ class gBsdConv(object):
 		filter_profiles.add_attribute(renderer, "text", 0)
 		filter_profiles.set_model(self.filter_profiles)
 		filter_profiles.connect('changed', self.filter_profiles_cb)
+
+		self.builder.get_object('btn_filter').connect('clicked', self.filter_cb)
+
+	def filter_cb(self, obj):
+		ext=[x.strip() for x in self.builder.get_object('filter').get_text().split(';')]
+		self.filter_cb_r(None, ext)
+
+	def filter_cb_r(self, parent, ext):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			if item.selected>=0:
+				s=0
+				for e in ext:
+					if item.name0.endswith(e):
+						s=1
+						break
+				item.selected=s
+			if items.iter_has_child(curr):
+				self.filter_cb_r(curr, ext)
+			curr = items.iter_next(curr)
 
 	def filter_profiles_cb(self, obj):
 		self.builder.get_object('filter').set_text(self.filter_profiles[self.builder.get_object('filter_profiles').get_active_iter()][1])
