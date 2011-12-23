@@ -140,6 +140,55 @@
                   </packing>
                 </child>
                 <child>
+                  <object class="GtkBox" id="box10">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkComboBox" id="filter_profiles">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="filter">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">•</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btn_filter">
+                        <property name="label" translatable="yes">Filter</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_action_appearance">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkScrolledWindow" id="scrolledwindow10">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -160,7 +209,7 @@
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>
@@ -185,28 +234,26 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkFixed" id="fixed12">
+                      <object class="GtkSeparator" id="separator3">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="vexpand">True</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
-                        <property name="top_attach">4</property>
-                        <property name="width">1</property>
+                        <property name="top_attach">3</property>
+                        <property name="width">3</property>
                         <property name="height">1</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkFixed" id="fixed13">
+                      <object class="GtkSeparator" id="separator4">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="vexpand">True</property>
                       </object>
                       <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">4</property>
-                        <property name="width">1</property>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">5</property>
+                        <property name="width">3</property>
                         <property name="height">1</property>
                       </packing>
                     </child>
@@ -269,18 +316,6 @@
                       </object>
                       <packing>
                         <property name="left_attach">2</property>
-                        <property name="top_attach">3</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkFixed" id="fixed14">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
                         <property name="top_attach">4</property>
                         <property name="width">1</property>
                         <property name="height">1</property>
@@ -294,7 +329,7 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">3</property>
+                        <property name="top_attach">4</property>
                         <property name="width">1</property>
                         <property name="height">1</property>
                       </packing>
@@ -385,8 +420,47 @@
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
-                        <property name="top_attach">3</property>
+                        <property name="top_attach">4</property>
                         <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label13">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Fitting</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">6</property>
+                        <property name="width">1</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="fitting_algo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="valign">start</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">6</property>
+                        <property name="width">2</property>
+                        <property name="height">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFixed" id="fixed4">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="vexpand">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">7</property>
+                        <property name="width">3</property>
                         <property name="height">1</property>
                       </packing>
                     </child>
