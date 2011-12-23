@@ -265,6 +265,19 @@ class gBsdConv(object):
 		self.builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
 		self.builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
+		self.filter_profiles = Gtk.ListStore(str, str)
+		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
+		self.filter_profiles.append(['Multimedia', '.ogg;.flac;.oga;.mp3;.mpc;.wv;.spx;.tta;.m4a;.m4r;.m4b;.m4p;.3g2;.mp4;.wma;.asf;.aif;.aiff;.wav;.ape;.mod;.module;.nst;.wow;.s3m;.it;.xm'])
+		filter_profiles=self.builder.get_object('filter_profiles')
+		renderer=Gtk.CellRendererText()
+		filter_profiles.pack_start(renderer, False)
+		filter_profiles.add_attribute(renderer, "text", 0)
+		filter_profiles.set_model(self.filter_profiles)
+		filter_profiles.connect('changed', self.filter_profiles_cb)
+
+	def filter_profiles_cb(self, obj):
+		self.builder.get_object('filter').set_text(self.filter_profiles[self.builder.get_object('filter_profiles').get_active_iter()][1])
+
 	def item_add_cb(self, obj):
 		builder = self.builder
 		recur = obj==builder.get_object("item_add_r")
@@ -325,6 +338,7 @@ class gBsdConv(object):
 		self.inter_codecs = Gtk.ListStore(str)
 		self.to_codecs = Gtk.ListStore(str)
 		self.profiles = Gtk.ListStore(str, str)
+		self.fitting_algo = Gtk.ListStore(str, str)
 
 		codecs=codecs_list(FROM)
 		codecs.sort(self._cmp)
@@ -341,6 +355,10 @@ class gBsdConv(object):
 
 		self.profiles.append(['Taiwan','utf-8:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
 		self.profiles.append(['China','utf-8:zhcn:utf-8;gbk:zhcn:utf-8'])
+
+		self.fitting_algo.append(['Minimal Error', 'minimal_error'])
+		self.fitting_algo.append(['Normal Score', 'normal_score'])
+		self.fitting_algo.append(['Trained Score (only used in meta tag operation)', 'Trained_score'])
 
 		from_codecs=self.builder.get_object('from_codecs')
 		renderer=Gtk.CellRendererText()
@@ -369,6 +387,13 @@ class gBsdConv(object):
 		profiles.add_attribute(renderer, "text", 0)
 		profiles.set_model(self.profiles)
 		profiles.set_active(0)
+
+		fitting_algo=self.builder.get_object('fitting_algo')
+		renderer=Gtk.CellRendererText()
+		fitting_algo.pack_start(renderer, False)
+		fitting_algo.add_attribute(renderer, "text", 0)
+		fitting_algo.set_model(self.fitting_algo)
+		fitting_algo.set_active(0)
 
 		self.builder.get_object("from_add").connect("clicked", self.from_add_cb)
 		self.builder.get_object("inter_add").connect("clicked", self.inter_add_cb)
