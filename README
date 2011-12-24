@@ -8,6 +8,7 @@ Feature:
 	Mutimetia files metadata conversion
 
 Todo:
+	Integrate filter operation into context menu on items widgets
 	Metatag operation: remove id3v1
 	Metatag operation: write id3v2.3
 	Utilizing scoring in bsdconv to choose conversion
