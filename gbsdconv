@@ -395,6 +395,9 @@ class gBsdConv(object):
 				else:
 					selected=-1
 				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', '', 0.0])
+			else:
+				if i==len(a)-1:
+					items[curr][attr_map['selected']]=1
 
 	def item_remove_cb(self, obj):
 		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
