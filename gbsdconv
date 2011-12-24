@@ -266,6 +266,10 @@ class gBsdConv(object):
 		self.builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
 		self.filter_profiles = Gtk.ListStore(str, str)
+		self.filter_profiles.append(['All', '\\a'])
+		self.filter_profiles.append(['File', '\\f'])
+		self.filter_profiles.append(['Directory', '\\d'])
+		self.filter_profiles.append(['Link', '\\l'])
 		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.cc;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
 		self.filter_profiles.append(['Multimedia', '.ogg;.flac;.oga;.mp3;.mpc;.wv;.spx;.tta;.m4a;.m4r;.m4b;.m4p;.3g2;.mp4;.wma;.asf;.aif;.aiff;.wav;.ape;.mod;.module;.nst;.wow;.s3m;.it;.xm'])
 		filter_profiles=self.builder.get_object('filter_profiles')
@@ -275,25 +279,84 @@ class gBsdConv(object):
 		filter_profiles.set_model(self.filter_profiles)
 		filter_profiles.connect('changed', self.filter_profiles_cb)
 
-		self.builder.get_object('btn_filter').connect('clicked', self.filter_cb)
+		self.builder.get_object('btn_check').connect('clicked', self.filter_check_cb)
+		self.builder.get_object('btn_uncheck').connect('clicked', self.filter_check_cb)
+		self.builder.get_object('btn_check_other').connect('clicked', self.filter_check_cb)
+		self.builder.get_object('btn_uncheck_other').connect('clicked', self.filter_check_cb)
 
-	def filter_cb(self, obj):
-		ext=[x.strip() for x in self.builder.get_object('filter').get_text().split(';')]
-		self.filter_cb_r(None, ext)
+	def filter_match(self, item, filter):
+		for t in filter:
+			if t=='\\a':
+				return True
+			elif t=='\\f':
+				if os.path.isfile(item.fullpath):
+					return True
+			elif t=='\\d':
+				if os.path.isdir(item.fullpath):
+					return True
+			elif t=='\\l':
+				if os.path.islink(item.fullpath):
+					return True
+			else:
+				if item.name0.endswith(t):
+					return True
+		return False
 
-	def filter_cb_r(self, parent, ext):
+	def filter_check_cb(self, obj):
+		ext=[x.strip() for x in self.builder.get_object('filter').get_text().split(';') if x.strip()!='']
+		if '\\a' in ext:
+			ext=['\\a']
+		if obj==self.builder.get_object('btn_check'):
+			self.filter_check_r(None, ext)
+		elif obj==self.builder.get_object('btn_uncheck'):
+			self.filter_uncheck_r(None, ext)
+		elif obj==self.builder.get_object('btn_check_other'):
+			self.filter_check_other_r(None, ext)
+		elif obj==self.builder.get_object('btn_uncheck_other'):
+			self.filter_uncheck_other_r(None, ext)
+
+	def filter_check_r(self, parent, filter):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			if item.selected>0:
-				s=0
-				for e in ext:
-					if item.name0.endswith(e):
-						s=1
-						break
-				item.selected=s
+			if item.selected==0:
+				if self.filter_match(item, filter):
+					item.selected=1
 			if items.iter_has_child(curr):
-				self.filter_cb_r(curr, ext)
+				self.filter_check_r(curr, filter)
+			curr = items.iter_next(curr)
+
+	def filter_uncheck_r(self, parent, filter):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			if item.selected==1:
+				if self.filter_match(item, filter):
+					item.selected=0
+			if items.iter_has_child(curr):
+				self.filter_uncheck_r(curr, filter)
+			curr = items.iter_next(curr)
+
+	def filter_check_other_r(self, parent, filter):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			if item.selected==0:
+				if not self.filter_match(item, filter):
+					item.selected=1
+			if items.iter_has_child(curr):
+				self.filter_check_other_r(curr, filter)
+			curr = items.iter_next(curr)
+
+	def filter_uncheck_other_r(self, parent, filter):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			if item.selected==1:
+				if not self.filter_match(item, filter):
+					item.selected=0
+			if items.iter_has_child(curr):
+				self.filter_uncheck_other_r(curr, filter)
 			curr = items.iter_next(curr)
 
 	def filter_profiles_cb(self, obj):
