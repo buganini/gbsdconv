@@ -17,6 +17,7 @@
 """
 
 import os
+import sys
 from bsdconv import *
 from ctypes import *
 from datetime import datetime
@@ -201,9 +202,18 @@ class Item(object):
 
 class gBsdConv(object):
 	def __init__(self):
-
-		self.builder = builder = Gtk.Builder()
-		builder.add_from_file("/usr/local/share/gbsdconv/gbsdconv.xml")
+		global builder
+		builder = Gtk.Builder()
+		loaded=False
+		for path in ['.','/usr/local/share/gbsdconv']:
+			fullpath=os.path.join(path, 'gbsdconv.xml')
+			if os.path.exists(fullpath):
+				builder.add_from_file(fullpath)
+				loaded=True
+				break
+		if not loaded:
+			sys.stderr.write('Unable to find gbsdconv.xml\n')
+			sys.exit(1)
 		self.window = builder.get_object("main_window")
 		self.window.connect("delete-event", Gtk.main_quit)
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
@@ -236,22 +246,22 @@ class gBsdConv(object):
 
 	#Callbacks
 	def main_tabs_cb(self, notebook, page, pagen):
-		operation_tabs = self.builder.get_object("operation_tabs")
+		operation_tabs = builder.get_object("operation_tabs")
 		operation_curr_page = operation_tabs.get_nth_page(operation_tabs.get_current_page())
 		if page == operation_tabs:
-			if operation_curr_page == self.builder.get_object("operation_text_page"):
+			if operation_curr_page == builder.get_object("operation_text_page"):
 				self.text_cb(None)
-			elif operation_curr_page == self.builder.get_object("operation_naming_page"):
+			elif operation_curr_page == builder.get_object("operation_naming_page"):
 				self.naming_cb()
-			elif operation_curr_page == self.builder.get_object("operation_content_page"):
+			elif operation_curr_page == builder.get_object("operation_content_page"):
 				self.content_cb()
-			elif operation_curr_page == self.builder.get_object("operation_metatag_page"):
+			elif operation_curr_page == builder.get_object("operation_metatag_page"):
 				self.metatag_cb()
 
 
 	#Callbacks for items tab
 	def item_tab_init(self):
-		items_view = self.builder.get_object("items")
+		items_view = builder.get_object("items")
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
 		items_view.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
@@ -260,10 +270,10 @@ class gBsdConv(object):
 		items_view.set_expander_column(items_path)
 		items_view.set_model(items)
 
-		self.builder.get_object("item_add").connect("clicked", self.item_add_cb)
-		self.builder.get_object("item_add_r").connect("clicked", self.item_add_cb)
-		self.builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
-		self.builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
+		builder.get_object("item_add").connect("clicked", self.item_add_cb)
+		builder.get_object("item_add_r").connect("clicked", self.item_add_cb)
+		builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
+		builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
 		self.filter_profiles = Gtk.ListStore(str, str)
 		self.filter_profiles.append(['All', '\\a'])
@@ -272,17 +282,17 @@ class gBsdConv(object):
 		self.filter_profiles.append(['Link', '\\l'])
 		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.cc;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
 		self.filter_profiles.append(['Multimedia', '.ogg;.flac;.oga;.mp3;.mpc;.wv;.spx;.tta;.m4a;.m4r;.m4b;.m4p;.3g2;.mp4;.wma;.asf;.aif;.aiff;.wav;.ape;.mod;.module;.nst;.wow;.s3m;.it;.xm'])
-		filter_profiles=self.builder.get_object('filter_profiles')
+		filter_profiles=builder.get_object('filter_profiles')
 		renderer=Gtk.CellRendererText()
 		filter_profiles.pack_start(renderer, False)
 		filter_profiles.add_attribute(renderer, "text", 0)
 		filter_profiles.set_model(self.filter_profiles)
 		filter_profiles.connect('changed', self.filter_profiles_cb)
 
-		self.builder.get_object('btn_check').connect('clicked', self.filter_check_cb)
-		self.builder.get_object('btn_uncheck').connect('clicked', self.filter_check_cb)
-		self.builder.get_object('btn_check_other').connect('clicked', self.filter_check_cb)
-		self.builder.get_object('btn_uncheck_other').connect('clicked', self.filter_check_cb)
+		builder.get_object('btn_check').connect('clicked', self.filter_check_cb)
+		builder.get_object('btn_uncheck').connect('clicked', self.filter_check_cb)
+		builder.get_object('btn_check_other').connect('clicked', self.filter_check_cb)
+		builder.get_object('btn_uncheck_other').connect('clicked', self.filter_check_cb)
 
 	def filter_match(self, item, filter):
 		for t in filter:
@@ -303,16 +313,16 @@ class gBsdConv(object):
 		return False
 
 	def filter_check_cb(self, obj):
-		ext=[x.strip() for x in self.builder.get_object('filter').get_text().split(';') if x.strip()!='']
+		ext=[x.strip() for x in builder.get_object('filter').get_text().split(';') if x.strip()!='']
 		if '\\a' in ext:
 			ext=['\\a']
-		if obj==self.builder.get_object('btn_check'):
+		if obj==builder.get_object('btn_check'):
 			self.filter_check_r(None, ext)
-		elif obj==self.builder.get_object('btn_uncheck'):
+		elif obj==builder.get_object('btn_uncheck'):
 			self.filter_uncheck_r(None, ext)
-		elif obj==self.builder.get_object('btn_check_other'):
+		elif obj==builder.get_object('btn_check_other'):
 			self.filter_check_other_r(None, ext)
-		elif obj==self.builder.get_object('btn_uncheck_other'):
+		elif obj==builder.get_object('btn_uncheck_other'):
 			self.filter_uncheck_other_r(None, ext)
 
 	def filter_check_r(self, parent, filter):
@@ -360,10 +370,9 @@ class gBsdConv(object):
 			curr = items.iter_next(curr)
 
 	def filter_profiles_cb(self, obj):
-		self.builder.get_object('filter').set_text(self.filter_profiles[self.builder.get_object('filter_profiles').get_active_iter()][1])
+		builder.get_object('filter').set_text(self.filter_profiles[builder.get_object('filter_profiles').get_active_iter()][1])
 
 	def item_add_cb(self, obj):
-		builder = self.builder
 		recur = obj==builder.get_object("item_add_r")
 		for path in builder.get_object("item_chooser").get_filenames():
 			self.item_add_cb_r(path, recur)
@@ -400,7 +409,7 @@ class gBsdConv(object):
 					items[curr][attr_map['selected']]=1
 
 	def item_remove_cb(self, obj):
-		model, treeiter = self.builder.get_object("items").get_selection().get_selected()
+		model, treeiter = builder.get_object("items").get_selection().get_selected()
 		if treeiter:
 			model.remove(treeiter)
 
@@ -447,47 +456,47 @@ class gBsdConv(object):
 		self.fitting_algo.append(['Normal Score', 'normal_score'])
 		self.fitting_algo.append(['Trained Score (only used in meta tag operation)', 'Trained_score'])
 
-		from_codecs=self.builder.get_object('from_codecs')
+		from_codecs=builder.get_object('from_codecs')
 		renderer=Gtk.CellRendererText()
 		from_codecs.pack_start(renderer, False)
 		from_codecs.add_attribute(renderer, "text", 0)
 		from_codecs.set_model(self.from_codecs)
 		from_codecs.set_active(0)
 
-		inter_codecs=self.builder.get_object('inter_codecs')
+		inter_codecs=builder.get_object('inter_codecs')
 		renderer=Gtk.CellRendererText()
 		inter_codecs.pack_start(renderer, False)
 		inter_codecs.add_attribute(renderer, "text", 0)
 		inter_codecs.set_model(self.inter_codecs)
 		inter_codecs.set_active(0)
 
-		to_codecs=self.builder.get_object('to_codecs')
+		to_codecs=builder.get_object('to_codecs')
 		renderer=Gtk.CellRendererText()
 		to_codecs.pack_start(renderer, False)
 		to_codecs.add_attribute(renderer, "text", 0)
 		to_codecs.set_model(self.to_codecs)
 		to_codecs.set_active(0)
 
-		profiles=self.builder.get_object('profiles')
+		profiles=builder.get_object('profiles')
 		renderer=Gtk.CellRendererText()
 		profiles.pack_start(renderer, False)
 		profiles.add_attribute(renderer, "text", 0)
 		profiles.set_model(self.profiles)
 		profiles.set_active(0)
 
-		fitting_algo=self.builder.get_object('fitting_algo')
+		fitting_algo=builder.get_object('fitting_algo')
 		renderer=Gtk.CellRendererText()
 		fitting_algo.pack_start(renderer, False)
 		fitting_algo.add_attribute(renderer, "text", 0)
 		fitting_algo.set_model(self.fitting_algo)
 		fitting_algo.set_active(0)
 
-		self.builder.get_object("from_add").connect("clicked", self.from_add_cb)
-		self.builder.get_object("inter_add").connect("clicked", self.inter_add_cb)
-		self.builder.get_object("to_add").connect("clicked", self.to_add_cb)
-		self.builder.get_object("profile_add").connect("clicked", self.profile_add_cb)
+		builder.get_object("from_add").connect("clicked", self.from_add_cb)
+		builder.get_object("inter_add").connect("clicked", self.inter_add_cb)
+		builder.get_object("to_add").connect("clicked", self.to_add_cb)
+		builder.get_object("profile_add").connect("clicked", self.profile_add_cb)
 
-		self.builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
+		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
 		self.last_add=None
 
@@ -502,8 +511,8 @@ class gBsdConv(object):
 		return cmp(a, b)
 
 	def from_add_cb(self, obj):
-		iter=self.builder.get_object('from_codecs').get_active_iter()
-		conversion=self.builder.get_object("conversion")
+		iter=builder.get_object('from_codecs').get_active_iter()
+		conversion=builder.get_object("conversion")
 		op={
 			None:'',
 			'from':',',
@@ -515,8 +524,8 @@ class gBsdConv(object):
 		self.last_add='from'
 		
 	def inter_add_cb(self, obj):
-		iter=self.builder.get_object('inter_codecs').get_active_iter()
-		conversion=self.builder.get_object("conversion")
+		iter=builder.get_object('inter_codecs').get_active_iter()
+		conversion=builder.get_object("conversion")
 		op={
 			None:'',
 			'from':':',
@@ -528,8 +537,8 @@ class gBsdConv(object):
 		self.last_add='inter'
 
 	def to_add_cb(self, obj):
-		iter=self.builder.get_object('to_codecs').get_active_iter()
-		conversion=self.builder.get_object("conversion")
+		iter=builder.get_object('to_codecs').get_active_iter()
+		conversion=builder.get_object("conversion")
 		op={
 			None:'',
 			'from':':',
@@ -541,8 +550,8 @@ class gBsdConv(object):
 		self.last_add='to'
 
 	def profile_add_cb(self, obj):
-		iter=self.builder.get_object('profiles').get_active_iter()
-		conversion=self.builder.get_object("conversion")
+		iter=builder.get_object('profiles').get_active_iter()
+		conversion=builder.get_object("conversion")
 		op={
 			None:'',
 			'from':':locale;',
@@ -554,7 +563,7 @@ class gBsdConv(object):
 		self.last_add='profile'
 
 	def conversion_apply_cb(self, obj):
-		self.converter = Bsdconvs(self.builder.get_object("conversion").get_text())
+		self.converter = Bsdconvs(builder.get_object("conversion").get_text())
 		if self.converter:
 			self.set_status(str(self.converter))
 		else:
@@ -563,11 +572,10 @@ class gBsdConv(object):
 	#Callbacks for operation tab
 	#+Text
 	def operation_text_tab_init(self):
-		text_origin_buffer = self.builder.get_object("text_origin").get_buffer()
+		text_origin_buffer = builder.get_object("text_origin").get_buffer()
 		text_origin_buffer.connect("changed", self.text_cb)
 
 	def text_cb(self, obj):
-		builder = self.builder
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
@@ -578,7 +586,7 @@ class gBsdConv(object):
 
 	#+Naming
 	def operation_naming_tab_init(self):
-		naming = self.builder.get_object("naming")
+		naming = builder.get_object("naming")
 
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.naming_items_toggle_cb)
@@ -601,20 +609,20 @@ class gBsdConv(object):
 
 		naming.set_model(items)
 
-		self.builder.get_object('naming_convert').connect('clicked', self.naming_convert)
+		builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
 	def operation_tabs_cb(self, notebook, page, pagen):
-		if page == self.builder.get_object("operation_text_page"):
+		if page == builder.get_object("operation_text_page"):
 			self.text_cb(None)
-		elif page == self.builder.get_object("operation_naming_page"):
+		elif page == builder.get_object("operation_naming_page"):
 			self.naming_cb()
-		elif page == self.builder.get_object("operation_content_page"):
+		elif page == builder.get_object("operation_content_page"):
 			self.content_cb()
-		elif page == self.builder.get_object("operation_metatag_page"):
+		elif page == builder.get_object("operation_metatag_page"):
 			self.metatag_cb()
 
 	def naming_cb(self):
-		naming = self.builder.get_object("naming")
+		naming = builder.get_object("naming")
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.collision=0
@@ -772,7 +780,7 @@ class gBsdConv(object):
 
 	#+Content
 	def operation_content_tab_init(self):
-		content_items = self.builder.get_object("content_items")
+		content_items = builder.get_object("content_items")
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
 		content_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
@@ -792,10 +800,9 @@ class gBsdConv(object):
 		content_items_select = content_items.get_selection()
 		content_items_select.connect("changed", self.content_items_select_cb)
 
-		self.builder.get_object('content_convert').connect('clicked', self.content_convert)
+		builder.get_object('content_convert').connect('clicked', self.content_convert)
 
 	def content_items_select_cb(self, obj):
-		builder = self.builder
 		model, iter = obj.get_selected()
 		if iter != None:
 			item=Item(iter)
@@ -854,7 +861,7 @@ class gBsdConv(object):
 
 	#+Meta Tag
 	def operation_metatag_tab_init(self):
-		metatag_items = self.builder.get_object("metatag_items")
+		metatag_items = builder.get_object("metatag_items")
 		toggle=Gtk.CellRendererToggle()
 		toggle.connect("toggled", self.items_toggle_cb)
 		metatag_items.insert_column_with_data_func(0, "#", toggle, self.items_toggle_render_cb, 0)
@@ -874,40 +881,40 @@ class gBsdConv(object):
 		metatag_items_select = metatag_items.get_selection()
 		metatag_items_select.connect("changed", self.metatag_items_select_cb)
 
-		metatag_origin=self.builder.get_object('metatag_origin')
+		metatag_origin=builder.get_object('metatag_origin')
 		metatag_origin.append_column(Gtk.TreeViewColumn("Key", Gtk.CellRendererText(), text=0))
 		metatag_origin.append_column(Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=1))
 
-		metatag_result=self.builder.get_object('metatag_result')
+		metatag_result=builder.get_object('metatag_result')
 		metatag_result.append_column(Gtk.TreeViewColumn("Key", Gtk.CellRendererText(), text=0))
 		metatag_result.append_column(Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=1))
 
-		self.builder.get_object('chk_skip_title').connect('clicked', self.metatag_items_select_cb)
-		self.builder.get_object('chk_skip_artist').connect('clicked', self.metatag_items_select_cb)
-		self.builder.get_object('chk_skip_album').connect('clicked', self.metatag_items_select_cb)
-		self.builder.get_object('chk_skip_comment').connect('clicked', self.metatag_items_select_cb)
-		self.builder.get_object('chk_skip_genre').connect('clicked', self.metatag_items_select_cb)
+		builder.get_object('chk_skip_title').connect('clicked', self.metatag_items_select_cb)
+		builder.get_object('chk_skip_artist').connect('clicked', self.metatag_items_select_cb)
+		builder.get_object('chk_skip_album').connect('clicked', self.metatag_items_select_cb)
+		builder.get_object('chk_skip_comment').connect('clicked', self.metatag_items_select_cb)
+		builder.get_object('chk_skip_genre').connect('clicked', self.metatag_items_select_cb)
 
-		self.builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
+		builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
 
 	def metatag_cb(self):
-		metatag_items = self.builder.get_object("metatag_items")
+		metatag_items = builder.get_object("metatag_items")
 		metatag_items.expand_all()
 		self.metatag_items_select_cb(None)
 
 	def metatag_items_select_cb(self, obj):
-		model, iter = self.builder.get_object('metatag_items').get_selection().get_selected()
+		model, iter = builder.get_object('metatag_items').get_selection().get_selected()
 		if iter != None:
 			item=Item(iter)
 			fullpath = item.fullpath
 			item.info=''
 
 			origin=Gtk.TreeStore(str, str)
-			metatag_origin=self.builder.get_object('metatag_origin')
+			metatag_origin=builder.get_object('metatag_origin')
 			metatag_origin.set_model(origin)
 
 			result=Gtk.TreeStore(str, str)
-			metatag_result=self.builder.get_object('metatag_result')
+			metatag_result=builder.get_object('metatag_result')
 			metatag_result.set_model(result)
 
 			if os.path.isfile(fullpath):
@@ -976,15 +983,15 @@ class gBsdConv(object):
 
 						title, artist, album, comment, genre=self.metatag_conv_tag(title, artist, album, comment, genre)
 
-						if not self.builder.get_object('chk_skip_title').get_active():
+						if not builder.get_object('chk_skip_title').get_active():
 							taglib.taglib_tag_set_title(tag, title)
-						if not self.builder.get_object('chk_skip_artist').get_active():
+						if not builder.get_object('chk_skip_artist').get_active():
 							taglib.taglib_tag_set_artist(tag, artist)
-						if not self.builder.get_object('chk_skip_album').get_active():
+						if not builder.get_object('chk_skip_album').get_active():
 							taglib.taglib_tag_set_album(tag, album)
-						if not self.builder.get_object('chk_skip_comment').get_active():
+						if not builder.get_object('chk_skip_comment').get_active():
 							taglib.taglib_tag_set_comment(tag, comment)
-						if not self.builder.get_object('chk_skip_genre').get_active():
+						if not builder.get_object('chk_skip_genre').get_active():
 							taglib.taglib_tag_set_genre(tag, genre)
 
 						taglib.taglib_file_save(mfile)
@@ -997,26 +1004,26 @@ class gBsdConv(object):
 
 	def metatag_conv_tag(self, title, artist, album, comment, genre):
 		a=[title, artist, album, comment, genre]
-		if self.builder.get_object('chk_skip_title').get_active():
+		if builder.get_object('chk_skip_title').get_active():
 			a[0]=''
-		if self.builder.get_object('chk_skip_artist').get_active():
+		if builder.get_object('chk_skip_artist').get_active():
 			a[1]=''
-		if self.builder.get_object('chk_skip_album').get_active():
+		if builder.get_object('chk_skip_album').get_active():
 			a[2]=''
-		if self.builder.get_object('chk_skip_comment').get_active():
+		if builder.get_object('chk_skip_comment').get_active():
 			a[3]=''
-		if self.builder.get_object('chk_skip_genre').get_active():
+		if builder.get_object('chk_skip_genre').get_active():
 			a[4]=''
 		a=self.converter.conv_list(a)
-		if self.builder.get_object('chk_skip_title').get_active():
+		if builder.get_object('chk_skip_title').get_active():
 			a[0]=title
-		if self.builder.get_object('chk_skip_artist').get_active():
+		if builder.get_object('chk_skip_artist').get_active():
 			a[1]=artist
-		if self.builder.get_object('chk_skip_album').get_active():
+		if builder.get_object('chk_skip_album').get_active():
 			a[2]=album
-		if self.builder.get_object('chk_skip_comment').get_active():
+		if builder.get_object('chk_skip_comment').get_active():
 			a[3]=comment
-		if self.builder.get_object('chk_skip_genre').get_active():
+		if builder.get_object('chk_skip_genre').get_active():
 			a[4]=genre
 		return a
 
@@ -1038,7 +1045,7 @@ class gBsdConv(object):
 		return a
 
 	def set_status(self, s):
-		status=self.builder.get_object('status')
+		status=builder.get_object('status')
 		status.remove_all(0)
 		status.push(0, s)
 
