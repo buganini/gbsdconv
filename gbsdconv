@@ -90,12 +90,16 @@ attr_map={
 
 class Bsdconvs(object):
 	def __init__(self, conversion):
-		cs=conversion.strip(',:|;').split(';')
+		cs=conversion.upper().strip(',:|;').split(';')
 		self.failed=False
 		self.conversions=[]
 		self.cache={}
 		self.lastc=0
+		done={}
 		for c in cs:
+			if c in done:
+				continue
+			done[c]=1
 			h=Bsdconv(c)
 			if not h:
 				self.errorstr=error()
@@ -252,7 +256,8 @@ class gBsdConv(object):
 		operation_page = builder.get_object("operation_page")
 		operation_curr_page = operation_page.get_nth_page(operation_page.get_current_page())
 		if page==builder.get_object("items_page"):
-			builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
+			if self.items_chooser_pwd:
+				builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
 		elif page == operation_page:
 			if operation_curr_page == builder.get_object("operation_text_page"):
 				self.text_cb(None)
@@ -461,9 +466,10 @@ class gBsdConv(object):
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
-		self.profiles.append(['Chineses Simplified -> Traditional','utf-8:score:utf-8;big5:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['Chineses Simplified -> Traditional','utf-8:score:utf-8;gbk:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
 		self.profiles.append(['Chineses Traditional -> Simplified','utf-8:score:utf-8;big5:score:zhcn:utf-8'])
 		self.profiles.append(['China','utf-8:score:zhcn:utf-8;gbk:score:zhcn:utf-8'])
+		self.profiles.append(['Japan','utf-8:score:zhcn:utf-8;shift-jis:score:utf-8'])
 		self.profiles.append(['Russia','utf-8:score:utf-8;cp1251:score:utf-8'])
 		self.profiles.append(['Taiwan','utf-8:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
 		self.profiles.append(['Thailand','utf-8:score:utf-8;cp874:score:utf-8'])
