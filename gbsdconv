@@ -220,6 +220,8 @@ class gBsdConv(object):
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
 
 		#Global objects
+		self.text_extensions=['.txt', '.xml', '.sql', '.htm', '.html', '.cue', '.c', '.cc', '.h', '.cpp', '.cxx', '.php', '.pl', '.py', '.rb', '.php3', '.phtml']
+		self.multimedia_extensions=['.ogg', '.flac', '.oga', '.mp3', '.mpc', '.wv', '.spx', '.tta', '.m4a', '.m4r', '.m4b', '.m4p', '.3g2', '.mp4', '.wma', '.asf', '.aif', '.aiff', '.wav', '.ape', '.mod', '.module', '.nst', '.wow', '.s3m', '.it', '.xm']
 		self.counter = 0
 		self.err_counter = 0
 		self.err_counter_selected = 0
@@ -257,7 +259,7 @@ class gBsdConv(object):
 			elif operation_curr_page == builder.get_object("operation_naming_page"):
 				self.naming_cb()
 			elif operation_curr_page == builder.get_object("operation_content_page"):
-				self.content_cb()
+				self.content_cb(None)
 			elif operation_curr_page == builder.get_object("operation_metatag_page"):
 				self.metatag_cb()
 
@@ -285,8 +287,8 @@ class gBsdConv(object):
 		self.filter_profiles.append(['File', '\\f'])
 		self.filter_profiles.append(['Directory', '\\d'])
 		self.filter_profiles.append(['Link', '\\l'])
-		self.filter_profiles.append(['Text', '.txt;.xml;.sql;.htm;.html;.cue;.c;.cc;.h;.cpp;.cxx;.php;.pl;.py;.rb;.php3;.phtml'])
-		self.filter_profiles.append(['Multimedia', '.ogg;.flac;.oga;.mp3;.mpc;.wv;.spx;.tta;.m4a;.m4r;.m4b;.m4p;.3g2;.mp4;.wma;.asf;.aif;.aiff;.wav;.ape;.mod;.module;.nst;.wow;.s3m;.it;.xm'])
+		self.filter_profiles.append(['Text', ';'.join(self.text_extensions)])
+		self.filter_profiles.append(['Multimedia', ';'.join(self.multimedia_extensions)])
 		filter_profiles=builder.get_object('filter_profiles')
 		renderer=Gtk.CellRendererText()
 		filter_profiles.pack_start(renderer, False)
@@ -620,7 +622,7 @@ class gBsdConv(object):
 		elif page == builder.get_object("operation_naming_page"):
 			self.naming_cb()
 		elif page == builder.get_object("operation_content_page"):
-			self.content_cb()
+			self.content_cb(None)
 		elif page == builder.get_object("operation_metatag_page"):
 			self.metatag_cb()
 
@@ -803,6 +805,10 @@ class gBsdConv(object):
 		content_items_select = content_items.get_selection()
 		content_items_select.connect("changed", self.content_items_select_cb)
 
+		chk_content_ignore_nontext=builder.get_object('chk_content_ignore_nontext')
+		chk_content_ignore_nontext.set_active(True)
+		chk_content_ignore_nontext.connect('clicked', self.content_cb)
+
 		builder.get_object('content_convert').connect('clicked', self.content_convert)
 
 	def content_items_select_cb(self, obj):
@@ -819,7 +825,7 @@ class gBsdConv(object):
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
-	def content_cb(self):
+	def content_cb(self, obj):
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
@@ -830,7 +836,7 @@ class gBsdConv(object):
 		while curr != None:
 			item=Item(curr)
 			fullpath=item.fullpath
-			if item.selected>=0 and os.path.isfile(fullpath):
+			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
 				info=self.converter.info()
 				err=info['ierr']+info['oerr']
