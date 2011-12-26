@@ -892,6 +892,7 @@ class gBsdConv(object):
 		metatag_result.append_column(Gtk.TreeViewColumn("Key", Gtk.CellRendererText(), text=0))
 		metatag_result.append_column(Gtk.TreeViewColumn("Value", Gtk.CellRendererText(), text=1))
 
+		builder.get_object('chk_remove_comment').connect('clicked', self.metatag_items_select_cb)
 		builder.get_object('chk_skip_title').connect('clicked', self.metatag_items_select_cb)
 		builder.get_object('chk_skip_artist').connect('clicked', self.metatag_items_select_cb)
 		builder.get_object('chk_skip_album').connect('clicked', self.metatag_items_select_cb)
