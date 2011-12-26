@@ -113,47 +113,48 @@ class Bsdconvs(object):
 	def __str__(self):
 		return ';'.join([x.split('"')[1] for x in [str(x) for x in self.conversions]])
 
+	def weighted_score(self, i):
+		return float(builder.get_object('factor_ierr').get_text())*i['ierr']+float(builder.get_object('factor_oerr').get_text())*i['oerr']+float(builder.get_object('factor_score').get_text())*i['score']
+
 	def conv(self, s):
 		for k,c in enumerate(self.conversions):
 			s=c.conv(s)
-			i=c.info()
-			err=i['ierr']+i['oerr']
+			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
-				e=err
+				max_score=score
 				r=s
-			elif err<e:
+			elif score>max_score:
 				self.lastc=k
-				e=err
+				max_score
 				r=s
 		return r
 
 	def conv_list(self, a):
 		for k,c in enumerate(self.conversions):
-			err=0
+			score=0
 			for s in a:
 				c.testconv(s)
 				i=c.info()
-				err+=i['ierr']+i['oerr']
+				score+=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
-				e=err
-			elif err<e:
+				max_score=score
+			elif score>max_score:
 				self.lastc=k
-				e=err
+				max_score=score
 		return [self.conversions[self.lastc].conv(s) for s in a]
 
 	def conv_file(self, ifile, ofile):
 		for k,c in enumerate(self.conversions):
 			c.testconv_file(ifile)
-			i=c.info()
-			err=i['ierr']+i['oerr']
+			score+=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
-				e=err
-			elif err<e:
+				max_score=score
+			elif score>max_score:
 				self.lastc=k
-				e=err
+				max_score=score
 		self.conversions[self.lastc].conv_file(ifile, ofile)
 		return
 		
@@ -449,12 +450,8 @@ class gBsdConv(object):
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
-		self.profiles.append(['Taiwan','utf-8:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
-		self.profiles.append(['China','utf-8:zhcn:utf-8;gbk:zhcn:utf-8'])
-
-		self.fitting_algo.append(['Minimal Error', 'minimal_error'])
-		self.fitting_algo.append(['Normal Score', 'normal_score'])
-		self.fitting_algo.append(['Trained Score (only used in meta tag operation)', 'Trained_score'])
+		self.profiles.append(['Taiwan','utf-8:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['China','utf-8:score:zhcn:utf-8;gbk:score:zhcn:utf-8'])
 
 		from_codecs=builder.get_object('from_codecs')
 		renderer=Gtk.CellRendererText()
@@ -484,17 +481,14 @@ class gBsdConv(object):
 		profiles.set_model(self.profiles)
 		profiles.set_active(0)
 
-		fitting_algo=builder.get_object('fitting_algo')
-		renderer=Gtk.CellRendererText()
-		fitting_algo.pack_start(renderer, False)
-		fitting_algo.add_attribute(renderer, "text", 0)
-		fitting_algo.set_model(self.fitting_algo)
-		fitting_algo.set_active(0)
-
 		builder.get_object("from_add").connect("clicked", self.from_add_cb)
 		builder.get_object("inter_add").connect("clicked", self.inter_add_cb)
 		builder.get_object("to_add").connect("clicked", self.to_add_cb)
 		builder.get_object("profile_add").connect("clicked", self.profile_add_cb)
+
+		builder.get_object("factor_ierr").set_text("-2")
+		builder.get_object("factor_oerr").set_text("-2")
+		builder.get_object("factor_score").set_text("1")
 
 		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
