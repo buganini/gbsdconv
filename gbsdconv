@@ -684,7 +684,7 @@ class gBsdConv(object):
 					item.target1=self.naming_conv_symlink(curr)
 			self.gen_naming_display(curr)
 			if items.iter_has_child(curr):
-				self.naming_cb_r(curr)
+				self.naming_cb_r_sym(curr)
 			curr = items.iter_next(curr)
 
 	def naming_conv_symlink(self, curr):
