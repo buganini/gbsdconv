@@ -278,6 +278,8 @@ class gBsdConv(object):
 		builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
 		builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
+		self.items_chooser_pwd=None
+
 		self.filter_profiles = Gtk.ListStore(str, str)
 		self.filter_profiles.append(['All', '\\a'])
 		self.filter_profiles.append(['File', '\\f'])
@@ -1026,6 +1028,9 @@ class gBsdConv(object):
 			a[3]=comment
 		if builder.get_object('chk_skip_genre').get_active():
 			a[4]=genre
+
+		if builder.get_object('chk_remove_comment').get_active():
+			a[3]=''
 		return a
 
 	#helper
