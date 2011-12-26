@@ -17,7 +17,7 @@
             <property name="can_focus">True</property>
             <property name="tab_pos">left</property>
             <child>
-              <object class="GtkBox" id="box2">
+              <object class="GtkBox" id="items_page">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
@@ -642,7 +642,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkNotebook" id="operation_tabs">
+              <object class="GtkNotebook" id="operation_page">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>

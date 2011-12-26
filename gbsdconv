@@ -232,8 +232,8 @@ class gBsdConv(object):
 		main_tabs = builder.get_object("main_tabs")
 		main_tabs.connect("switch-page", self.main_tabs_cb)
 
-		operation_tabs = builder.get_object("operation_tabs")
-		operation_tabs.connect("switch-page", self.operation_tabs_cb)
+		operation_page = builder.get_object("operation_page")
+		operation_page.connect("switch-page", self.operation_page_cb)
 
 		self.item_tab_init()
 		self.conversion_tab_init()
@@ -247,9 +247,11 @@ class gBsdConv(object):
 
 	#Callbacks
 	def main_tabs_cb(self, notebook, page, pagen):
-		operation_tabs = builder.get_object("operation_tabs")
-		operation_curr_page = operation_tabs.get_nth_page(operation_tabs.get_current_page())
-		if page == operation_tabs:
+		operation_page = builder.get_object("operation_page")
+		operation_curr_page = operation_page.get_nth_page(operation_page.get_current_page())
+		if page==builder.get_object("items_page"):
+			builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
+		elif page == operation_page:
 			if operation_curr_page == builder.get_object("operation_text_page"):
 				self.text_cb(None)
 			elif operation_curr_page == builder.get_object("operation_naming_page"):
@@ -294,6 +296,11 @@ class gBsdConv(object):
 		builder.get_object('btn_uncheck').connect('clicked', self.filter_check_cb)
 		builder.get_object('btn_check_other').connect('clicked', self.filter_check_cb)
 		builder.get_object('btn_uncheck_other').connect('clicked', self.filter_check_cb)
+
+		builder.get_object("item_chooser").connect('current-folder-changed', self.item_chooser_cd_cb)
+
+	def item_chooser_cd_cb(self, obj):
+		self.items_chooser_pwd=obj.get_current_folder_uri()
 
 	def filter_match(self, item, filter):
 		for t in filter:
@@ -605,7 +612,7 @@ class gBsdConv(object):
 
 		builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
-	def operation_tabs_cb(self, notebook, page, pagen):
+	def operation_page_cb(self, notebook, page, pagen):
 		if page == builder.get_object("operation_text_page"):
 			self.text_cb(None)
 		elif page == builder.get_object("operation_naming_page"):
