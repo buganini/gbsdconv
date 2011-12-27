@@ -20,9 +20,7 @@ import os
 import sys
 from bsdconv import *
 from ctypes import *
-from datetime import datetime
-from time import mktime
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 
 taglib=CDLL('libtag_c.so')
 
@@ -68,7 +66,7 @@ taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
 taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
 
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, float)
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
@@ -85,7 +83,6 @@ attr_map={
 	'duplication':	12,
 	'target0':	13,	#symlink target0
 	'target1':	14,	#symlink target1
-	'atime':	15
 }
 
 class Bsdconvs(object):
@@ -285,6 +282,8 @@ class gBsdConv(object):
 		items_view.set_expander_column(items_path)
 		items_view.set_model(items)
 
+		items_view.connect("button-press-event", self.items_button_press)
+
 		builder.get_object("item_add").connect("clicked", self.item_add_cb)
 		builder.get_object("item_add_r").connect("clicked", self.item_add_cb)
 		builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
@@ -306,15 +305,7 @@ class gBsdConv(object):
 		filter_profiles.set_model(self.filter_profiles)
 		filter_profiles.connect('changed', self.filter_profiles_cb)
 
-		builder.get_object('btn_check').connect('clicked', self.filter_check_cb)
-		builder.get_object('btn_uncheck').connect('clicked', self.filter_check_cb)
-		builder.get_object('btn_check_other').connect('clicked', self.filter_check_cb)
-		builder.get_object('btn_uncheck_other').connect('clicked', self.filter_check_cb)
-
 		builder.get_object("item_chooser").connect('current-folder-changed', self.item_chooser_cd_cb)
-
-	def item_chooser_cd_cb(self, obj):
-		self.items_chooser_pwd=obj.get_current_folder_uri()
 
 	def filter_match(self, item, filter):
 		for t in filter:
@@ -334,20 +325,23 @@ class gBsdConv(object):
 					return True
 		return False
 
-	def filter_check_cb(self, obj):
+	def filter_cb(self, obj, tree):
+		mode, iter=tree.get_selection().get_selected()
+		if not iter:
+			return
 		ext=[x.strip() for x in builder.get_object('filter').get_text().split(';') if x.strip()!='']
 		if '\\a' in ext:
 			ext=['\\a']
-		if obj==builder.get_object('btn_check'):
-			self.filter_check_r(None, ext)
-		elif obj==builder.get_object('btn_uncheck'):
-			self.filter_uncheck_r(None, ext)
-		elif obj==builder.get_object('btn_check_other'):
-			self.filter_check_other_r(None, ext)
-		elif obj==builder.get_object('btn_uncheck_other'):
-			self.filter_uncheck_other_r(None, ext)
+		if obj.get_label()=="Filter: Select":
+			self.filter_select(iter, ext)
+		elif obj.get_label()=="Filter: Deselect":
+			self.filter_deselect(iter, ext)
+		elif obj.get_label()=="Filter: Select Others":
+			self.filter_select_others(iter, ext)
+		elif obj.get_label()=="Filter: Deselect Others":
+			self.filter_deselect_others(iter, ext)
 
-	def filter_check_r(self, parent, filter):
+	def filter_select(self, parent, filter):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
@@ -355,10 +349,10 @@ class gBsdConv(object):
 				if self.filter_match(item, filter):
 					item.selected=1
 			if items.iter_has_child(curr):
-				self.filter_check_r(curr, filter)
+				self.filter_select(curr, filter)
 			curr = items.iter_next(curr)
 
-	def filter_uncheck_r(self, parent, filter):
+	def filter_deselect(self, parent, filter):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
@@ -366,10 +360,10 @@ class gBsdConv(object):
 				if self.filter_match(item, filter):
 					item.selected=0
 			if items.iter_has_child(curr):
-				self.filter_uncheck_r(curr, filter)
+				self.filter_deselect(curr, filter)
 			curr = items.iter_next(curr)
 
-	def filter_check_other_r(self, parent, filter):
+	def filter_select_others(self, parent, filter):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
@@ -377,10 +371,10 @@ class gBsdConv(object):
 				if not self.filter_match(item, filter):
 					item.selected=1
 			if items.iter_has_child(curr):
-				self.filter_check_other_r(curr, filter)
+				self.filter_select_others(curr, filter)
 			curr = items.iter_next(curr)
 
-	def filter_uncheck_other_r(self, parent, filter):
+	def filter_deselect_others(self, parent, filter):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
@@ -388,8 +382,85 @@ class gBsdConv(object):
 				if not self.filter_match(item, filter):
 					item.selected=0
 			if items.iter_has_child(curr):
-				self.filter_uncheck_other_r(curr, filter)
+				self.filter_deselect_others(curr, filter)
 			curr = items.iter_next(curr)
+
+	def item_toggle_cb(self, obj, tree):
+		mode, iter=tree.get_selection().get_selected()
+		if not iter:
+			return
+		if obj.get_label()=="Inverse":
+			self.item_toggle_cb_r(iter, -1)
+		elif obj.get_label()=="Select":
+			self.item_toggle_cb_r(iter, 1)
+		elif obj.get_label()=="Deselect":
+			self.item_toggle_cb_r(iter, 0)	
+
+	def item_toggle_cb_r(self, iter, v):
+		while iter!=None:
+			item=Item(iter)
+			if item.selected>=0:
+				if v==-1:
+					if item.selected:
+						item.selected=0
+					else:
+						item.selected=1
+				else:
+					item.selected=v
+			if items.iter_has_child(iter):
+				self.item_toggle_cb_r(items.iter_children(iter), v)
+			iter=items.iter_next(iter)
+
+
+	def items_button_press(self, obj, evt):
+		mode, iter=obj.get_selection().get_selected()
+		if not iter:
+			return
+		if evt.button==3 and evt.type==Gdk.EventType.BUTTON_PRESS :
+			menu=Gtk.Menu()
+
+			item=Gtk.MenuItem.new_with_label("Inverse")
+			item.set_visible(True)
+			item.connect("activate", self.item_toggle_cb, obj)
+			menu.attach(item, 0, 1, 0, 1)
+
+			item=Gtk.MenuItem.new_with_label("Select")
+			item.set_visible(True)
+			item.connect("activate", self.item_toggle_cb, obj)
+			menu.attach(item, 0, 1, 1, 2)
+
+			item=Gtk.MenuItem.new_with_label("Deselect")
+			item.set_visible(True)
+			item.connect("activate", self.item_toggle_cb, obj)
+			menu.attach(item, 0, 1, 2, 3)
+
+			item=Gtk.MenuItem.new_with_label("Filter: Select")
+			item.set_visible(True)
+			item.connect("activate", self.filter_cb, obj)
+			menu.attach(item, 0, 1, 3, 4)
+
+			item=Gtk.MenuItem.new_with_label("Filter: Deselect")
+			item.set_visible(True)
+			item.connect("activate", self.filter_cb, obj)
+			menu.attach(item, 0, 1, 4, 5)
+
+			item=Gtk.MenuItem.new_with_label("Filter: Select Others")
+			item.set_visible(True)
+			item.connect("activate", self.filter_cb, obj)
+			menu.attach(item, 0, 1, 5, 6)
+
+			item=Gtk.MenuItem.new_with_label("Filter: Deselect Others")
+			item.set_visible(True)
+			item.connect("activate", self.filter_cb, obj)
+			menu.attach(item, 0, 1, 6, 7)
+
+			menu.attach_to_widget(obj, None)
+			menu.popup(None, None, None, None, evt.button, evt.time)
+			return False
+		return False
+
+	def item_chooser_cd_cb(self, obj):
+		self.items_chooser_pwd=obj.get_current_folder_uri()
 
 	def filter_profiles_cb(self, obj):
 		builder.get_object('filter').set_text(self.filter_profiles[builder.get_object('filter_profiles').get_active_iter()][1])
@@ -425,7 +496,7 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', '', 0.0])
+				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', ''])
 			else:
 				if i==len(a)-1:
 					items[curr][attr_map['selected']]=1
@@ -1126,24 +1197,10 @@ class gBsdConv(object):
 	def items_toggle_cb(self, renderer, path):
 		iter=items.get_iter(path)
 		item=Item(iter)
-		t=datetime.now()
-		now=mktime(t.timetuple())+1e-6*t.microsecond
-		if now-item.atime<=0.2:
-			if items.iter_has_child(iter):
-				self.item_toggle_set_r(items.iter_children(iter), item.selected)
-		elif item.selected:
+		if item.selected:
 			item.selected=0
 		else:
 			item.selected=1
-		item.atime=now
-
-	def item_toggle_set_r(self, iter, v):
-		while iter!=None:
-			item=Item(iter)
-			item.selected=v
-			if items.iter_has_child(iter):
-				self.item_toggle_set_r(items.iter_children(iter), v)
-			iter=items.iter_next(iter)
 
 if __name__ == "__main__":
 	app = gBsdConv()
