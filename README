@@ -1,11 +1,11 @@
 GUI for bsdconv
 
 Feature:
-	Multi-conversion
+	Multi-conversions
 	Text conversion
 	Text file conversion
 	File path conversion
-	Mutimetia files metadata conversion
+	Mutimetia metadata conversion
 
 Todo:
 	metatag operation: score traning by path name
