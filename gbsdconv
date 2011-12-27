@@ -246,6 +246,8 @@ class gBsdConv(object):
 		self.operation_content_tab_init()
 		self.operation_metatag_tab_init()
 
+		self.set_status("Hint: Right click for recursive operations")
+
 		#XXX to be implemented
 		builder.get_object('chk_remove_id3v1').set_visible(False)
 		builder.get_object('chk_use_id3v2_3').set_visible(False)
@@ -258,6 +260,7 @@ class gBsdConv(object):
 		operation_page = builder.get_object("operation_page")
 		operation_curr_page = operation_page.get_nth_page(operation_page.get_current_page())
 		if page==builder.get_object("items_page"):
+			self.set_status("Hint: Right click for recursive operations")
 			if self.items_chooser_pwd:
 				builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
 		elif page == operation_page:
