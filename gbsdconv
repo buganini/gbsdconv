@@ -248,6 +248,10 @@ class gBsdConv(object):
 		self.operation_content_tab_init()
 		self.operation_metatag_tab_init()
 
+		#XXX to be implemented
+		builder.get_object('chk_remove_id3v1').set_visible(False)
+		builder.get_object('chk_use_id3v2_3').set_visible(False)
+
 		#launch
 		self.window.show()
 
