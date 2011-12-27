@@ -210,8 +210,8 @@ class gBsdConv(object):
 		global builder
 		builder = Gtk.Builder()
 		loaded=False
-		for path in ['.','/usr/local/share/gbsdconv']:
-			fullpath=os.path.join(path, 'gbsdconv.xml')
+		for datadir in ['.','/usr/local/share/gbsdconv']:
+			fullpath=os.path.join(datadir, 'gbsdconv.xml')
 			if os.path.exists(fullpath):
 				builder.add_from_file(fullpath)
 				loaded=True
@@ -221,6 +221,7 @@ class gBsdConv(object):
 			sys.exit(1)
 		self.window = builder.get_object("main_window")
 		self.window.connect("delete-event", Gtk.main_quit)
+		self.window.set_icon_from_file(os.path.join(datadir, 'gbsdconv.png'))
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
 
 		#Global objects
