@@ -513,6 +513,14 @@ class gBsdConv(object):
 		builder.get_object("factor_oerr").set_text("-2")
 		builder.get_object("factor_score").set_text("1")
 
+		builder.get_object("url_arg1").set_text("utf-8")
+		builder.get_object("url_arg2").set_text("utf-8")
+		builder.get_object("url_add").connect("clicked", self.url_add_cb)
+
+		builder.get_object("mistreat_arg1").set_text("big5")
+		builder.get_object("mistreat_arg2").set_text("iso-8859-1")
+		builder.get_object("mistreat_add").connect("clicked", self.mistreat_add_cb)
+
 		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 
 		self.last_add=None
@@ -577,6 +585,30 @@ class gBsdConv(object):
 			'profile':';',
 		}
 		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.profiles[iter][1]))
+		self.last_add='profile'
+
+	def url_add_cb(self, obj):
+		conversion=builder.get_object("conversion")
+		op={
+			None:'',
+			'from':':locale;',
+			'inter':':locale;',
+			'to':';',
+			'profile':';',
+		}
+		conversion.set_text('%s%sescape,%s:unicode,byte|skip,%s:utf-8' % (conversion.get_text(), op[self.last_add], builder.get_object('url_arg2').get_text(), builder.get_object('url_arg1').get_text()))
+		self.last_add='profile'
+
+	def mistreat_add_cb(self, obj):
+		conversion=builder.get_object("conversion")
+		op={
+			None:'',
+			'from':':locale;',
+			'inter':':locale;',
+			'to':';',
+			'profile':';',
+		}
+		conversion.set_text('%s%sutf-8:%s|%s:utf-8' % (conversion.get_text(), op[self.last_add], builder.get_object('mistreat_arg2').get_text(), builder.get_object('mistreat_arg1').get_text()))
 		self.last_add='profile'
 
 	def conversion_apply_cb(self, obj):
