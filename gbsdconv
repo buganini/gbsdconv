@@ -527,6 +527,7 @@ class gBsdConv(object):
 		builder.get_object("mistreat_add").connect("clicked", self.mistreat_add_cb)
 
 		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
+		builder.get_object("conversion_clear").connect("clicked", lambda x: builder.get_object("conversion").set_text(""))
 
 		self.last_add=None
 
