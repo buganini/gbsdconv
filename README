@@ -7,6 +7,9 @@ Feature:
 	File path conversion
 	Mutimetia metadata conversion
 
+Screenshots:
+	http://buganini.github.com/gbsdconv/
+
 Todo:
 	metatag operation: score traning by path name
 	Integrate filter operation into context menu on items widgets
