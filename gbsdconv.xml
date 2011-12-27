@@ -168,7 +168,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="btn_check">
-                        <property name="label" translatable="yes">Check</property>
+                        <property name="label" translatable="yes">Select</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -183,7 +183,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="btn_uncheck">
-                        <property name="label" translatable="yes">Uncheck</property>
+                        <property name="label" translatable="yes">Deselect</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -198,7 +198,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="btn_check_other">
-                        <property name="label" translatable="yes">Check Other</property>
+                        <property name="label" translatable="yes">Select Other</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -213,7 +213,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="btn_uncheck_other">
-                        <property name="label" translatable="yes">Uncheck Other</property>
+                        <property name="label" translatable="yes">Deselect Other</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
