@@ -92,6 +92,7 @@ class Bsdconvs(object):
 		self.conversions=[]
 		self.cache={}
 		self.lastc=0
+		self.cinfo=None
 		done={}
 		for c in cs:
 			if c in done:
@@ -118,6 +119,7 @@ class Bsdconvs(object):
 		return float(builder.get_object('factor_ierr').get_text())*i['ierr']+float(builder.get_object('factor_oerr').get_text())*i['oerr']+float(builder.get_object('factor_score').get_text())*i['score']
 
 	def conv(self, s):
+		self.cinfo=None
 		for k,c in enumerate(self.conversions):
 			s=c.conv(s)
 			score=self.weighted_score(c.info())
@@ -144,9 +146,18 @@ class Bsdconvs(object):
 			elif score>max_score:
 				self.lastc=k
 				max_score=score
-		return [self.conversions[self.lastc].conv(s) for s in a]
+		ret=[]
+		for k,s in enumerate(a):
+			ret.append(self.conversions[self.lastc].conv(s))
+			if k==0:
+				self.cinfo=self.conversions[self.lastc].info()
+			else:
+				n=self.conversions[self.lastc].info()
+				self.cinfo={x:n[x]+self.cinfo[x] for x in n}
+		return ret
 
 	def conv_file(self, ifile, ofile):
+		self.cinfo=None
 		for k,c in enumerate(self.conversions):
 			c.testconv_file(ifile)
 			score+=self.weighted_score(c.info())
@@ -160,6 +171,7 @@ class Bsdconvs(object):
 		return
 		
 	def testconv_file(self, str):
+		self.cinfo=None
 		for k,c in enumerate(self.conversions):
 			c.testconv_file(str)
 			i=c.info()
@@ -173,6 +185,8 @@ class Bsdconvs(object):
 		return
 
 	def info(self):
+		if self.cinfo:
+			return self.cinfo
 		return self.conversions[self.lastc].info()
 
 	def error(self):
@@ -972,8 +986,8 @@ class gBsdConv(object):
 			fullpath=item.fullpath
 			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
-				info=self.converter.info()
-				err=info['ierr']+info['oerr']
+				i=self.converter.info()
+				err=i['ierr']+i['oerr']
 				if err>0:
 					item.info=str(err)
 					self.err_counter+=1
@@ -1045,14 +1059,44 @@ class gBsdConv(object):
 	def metatag_cb(self):
 		metatag_items = builder.get_object("metatag_items")
 		metatag_items.expand_all()
-		self.metatag_items_select_cb(None)
+		self.metatag_info(None)
+
+	def metatag_info(self, parent):
+		curr = items.iter_children(parent)
+		while curr != None:
+			item=Item(curr)
+			item.info=''
+			fullpath=item.fullpath
+			if os.path.isfile(fullpath):
+				mfile=taglib.taglib_file_new(fullpath)
+				if mfile!=None:
+					if taglib.taglib_file_is_valid(mfile):
+						tag=taglib.taglib_file_tag(mfile)
+
+						title=self.latin1(taglib.taglib_tag_title(tag))
+						artist=self.latin1(taglib.taglib_tag_artist(tag))
+						album=self.latin1(taglib.taglib_tag_album(tag))
+						comment=self.latin1(taglib.taglib_tag_comment(tag))
+						genre=self.latin1(taglib.taglib_tag_genre(tag))
+
+						title, artist, album, comment, genre=self.metatag_conv_tag(title, artist, album, comment, genre)
+
+						taglib.taglib_tag_free_strings()
+
+					taglib.taglib_file_free(mfile)
+				info=self.converter.info()
+				err=info['ierr']+info['oerr']
+				if err>0:
+					item.info=str(err)
+			if items.iter_has_child(curr):
+				self.metatag_info(curr)
+			curr = items.iter_next(curr)
 
 	def metatag_items_select_cb(self, obj):
 		model, iter = builder.get_object('metatag_items').get_selection().get_selected()
 		if iter != None:
 			item=Item(iter)
 			fullpath = item.fullpath
-			item.info=''
 
 			origin=Gtk.TreeStore(str, str)
 			metatag_origin=builder.get_object('metatag_origin')
