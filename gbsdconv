@@ -965,11 +965,14 @@ class gBsdConv(object):
 			item=Item(iter)
 			fullpath = item.fullpath
 			if os.path.isfile(fullpath):
-				f=open(fullpath,'r')
-				cnt=f.read()
-				builder.get_object("content_origin").get_buffer().set_text(self.utf8er.conv(cnt))
-				f.close()
-				builder.get_object("content_result").get_buffer().set_text(self.utf8er.conv(self.converter.conv(cnt)))
+				if not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions):
+					f=open(fullpath,'r')
+					cnt=f.read()
+					builder.get_object("content_origin").get_buffer().set_text(self.utf8er.conv(cnt))
+					f.close()
+					builder.get_object("content_result").get_buffer().set_text(self.utf8er.conv(self.converter.conv(cnt)))
+				else:
+					self.set_status("%s is ignored as it is not a text file" % fullpath)
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
