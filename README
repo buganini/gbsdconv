@@ -11,6 +11,5 @@ Screenshots:
 	http://buganini.github.com/gbsdconv/
 
 Todo:
-	Metatag operation: score traning by path name
 	Metatag operation: remove id3v1 (require modifying taglib binding)
 	Metatag operation: write id3v2.3 (require modifying taglib binding)

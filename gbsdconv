@@ -18,6 +18,7 @@
 
 import os
 import sys
+import tempfile
 from bsdconv import *
 from ctypes import *
 from gi.repository import Gtk, Gdk
@@ -90,21 +91,35 @@ class Bsdconvs(object):
 		cs=conversion.upper().strip(',:|;').split(';')
 		self.failed=False
 		self.conversions=[]
+		self.evaluaters=[]
+		self.trainer=None
 		self.cache={}
 		self.lastc=0
 		self.cinfo=None
+		self.tempfile=None
 		done={}
+		train=builder.get_object('chk_path_train').get_active()
+		if train:
+			self.tempfile=tempfile.TemporaryFile()
+			self.trainer=Bsdconv('LOCALE:HALF:LOWER:SCORE_TRAIN:NULL')
+			self.trainer.ctl(CTL_SCORE_ATTACH, self.tempfile, 0)
 		for c in cs:
 			if c in done:
 				continue
 			done[c]=1
-			h=Bsdconv(c)
-			if not h:
+			c1=c.replace(':SCORE:',':')
+			c2=c.replace(':SCORE:',':HALF:LOWER:SCORE:')
+			h1=Bsdconv(c1)
+			h2=Bsdconv(c2)
+			if not h1 or not h2:
 				self.errorstr=error()
 				self.failed=True
 				self.conversions=[Bsdconv('BYTE:BYTE')]
 			else:
-				self.conversions.append(h)
+				if train:
+					h2.ctl(CTL_SCORE_ATTACH, self.tempfile, 0)
+				self.conversions.append(h1)
+				self.evaluaters.append(h2)
 
 	def __bool__(self):
 		return not self.failed
@@ -118,23 +133,32 @@ class Bsdconvs(object):
 	def weighted_score(self, i):
 		return float(builder.get_object('factor_ierr').get_text())*i['ierr']+float(builder.get_object('factor_oerr').get_text())*i['oerr']+float(builder.get_object('factor_score').get_text())*i['score']
 
+	def score_train(self, s):
+		if self.trainer:
+			self.trainer.testconv(s)
+
+	def score_clear(self):
+		if self.trainer:
+			self.tempfile=tempfile.TemporaryFile()
+			self.trainer.ctl(CTL_SCORE_ATTACH, self.tempfile, 0)
+			for c in self.evaluaters:
+				c.ctl(CTL_SCORE_ATTACH, self.tempfile, 0)
+
 	def conv(self, s):
 		self.cinfo=None
-		for k,c in enumerate(self.conversions):
-			s=c.conv(s)
+		for k,c in enumerate(self.evaluaters):
+			c.testconv(s)
 			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
 				max_score=score
-				r=s
 			elif score>max_score:
 				self.lastc=k
-				max_score
-				r=s
-		return r
+				max_score=score
+		return self.conversions[self.lastc].conv(s)
 
 	def conv_list(self, a):
-		for k,c in enumerate(self.conversions):
+		for k,c in enumerate(self.evaluaters):
 			score=0
 			for s in a:
 				c.testconv(s)
@@ -158,7 +182,7 @@ class Bsdconvs(object):
 
 	def conv_file(self, ifile, ofile):
 		self.cinfo=None
-		for k,c in enumerate(self.conversions):
+		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(ifile)
 			score+=self.weighted_score(c.info())
 			if k==0:
@@ -172,7 +196,7 @@ class Bsdconvs(object):
 		
 	def testconv_file(self, str):
 		self.cinfo=None
-		for k,c in enumerate(self.conversions):
+		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(str)
 			i=c.info()
 			err=i['ierr']+i['oerr']
@@ -622,6 +646,7 @@ class gBsdConv(object):
 		builder.get_object("mistreat_add").connect("clicked", self.mistreat_add_cb)
 
 		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
+		builder.get_object("chk_path_train").connect("clicked", self.conversion_apply_cb)
 		builder.get_object("conversion_clear").connect("clicked", lambda x: builder.get_object("conversion").set_text(""))
 
 		self.last_add=None
@@ -1074,6 +1099,9 @@ class gBsdConv(object):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
 					if taglib.taglib_file_is_valid(mfile):
+						self.converter.score_clear()
+						self.converter.score_train(fullpath)
+
 						tag=taglib.taglib_file_tag(mfile)
 
 						title=self.latin1(taglib.taglib_tag_title(tag))
@@ -1113,6 +1141,9 @@ class gBsdConv(object):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
 					if taglib.taglib_file_is_valid(mfile):
+						self.converter.score_clear()
+						self.converter.score_train(fullpath)
+
 						tag=taglib.taglib_file_tag(mfile)
 
 						title=self.latin1(taglib.taglib_tag_title(tag))
@@ -1165,6 +1196,9 @@ class gBsdConv(object):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
 					if taglib.taglib_file_is_valid(mfile):
+						self.converter.score_clear()
+						self.converter.score_train(fullpath)
+
 						tag=taglib.taglib_file_tag(mfile)
 
 						title=self.latin1(taglib.taglib_tag_title(tag))
