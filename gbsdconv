@@ -1137,6 +1137,9 @@ class gBsdConv(object):
 			metatag_result=builder.get_object('metatag_result')
 			metatag_result.set_model(result)
 
+			if item.selected<0:
+				return
+
 			if os.path.isfile(fullpath):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
