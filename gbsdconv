@@ -101,14 +101,14 @@ class Bsdconvs(object):
 		train=builder.get_object('chk_path_train').get_active()
 		if train:
 			self.tempfile=tempfile.TemporaryFile()
-			self.trainer=Bsdconv('LOCALE:HALF:LOWER:SCORE_TRAIN:NULL')
+			self.trainer=Bsdconv('LOCALE:HALF:LOWER:ZH_FUZZY_TW:SCORE_TRAIN:NULL')
 			self.trainer.ctl(CTL_SCORE_ATTACH, self.tempfile, 0)
 		for c in cs:
 			if c in done:
 				continue
 			done[c]=1
 			c1=c.replace(':SCORE:',':')
-			c2=c.replace(':SCORE:',':HALF:LOWER:SCORE:')
+			c2=c.replace(':SCORE:',':HALF:LOWER:ZH_FUZZY_TW:SCORE:')
 			h1=Bsdconv(c1)
 			h2=Bsdconv(c2)
 			if not h1 or not h2:
