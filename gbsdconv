@@ -1087,7 +1087,10 @@ class gBsdConv(object):
 	def metatag_cb(self):
 		metatag_items = builder.get_object("metatag_items")
 		metatag_items.expand_all()
+		self.err_counter=0
+		self.err_counter_selected=0
 		self.metatag_info(None)
+		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def metatag_info(self, parent):
 		curr = items.iter_children(parent)
@@ -1119,6 +1122,10 @@ class gBsdConv(object):
 				err=info['ierr']+info['oerr']
 				if err>0:
 					item.info=str(err)
+					self.err_counter+=1
+					if item.selected>0:
+						self.err_counter_selected+=1
+
 			if items.iter_has_child(curr):
 				self.metatag_info(curr)
 			curr = items.iter_next(curr)
