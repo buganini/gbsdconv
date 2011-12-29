@@ -260,7 +260,7 @@ class gBsdConv(object):
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
 
 		#Global objects
-		self.text_extensions=['.txt', '.xml', '.sql', '.htm', '.html', '.cue', '.c', '.cc', '.h', '.cpp', '.cxx', '.php', '.pl', '.py', '.rb', '.php3', '.phtml']
+		self.text_extensions=['.txt', '.xml', '.sql', '.htm', '.html', '.cue', '.c', '.cc', '.h', '.cpp', '.cxx', '.php', '.pl', '.py', '.rb', '.php3', '.phtml', '.csv', '.log', '.text', '.utxt']
 		self.multimedia_extensions=['.ogg', '.flac', '.oga', '.mp3', '.mpc', '.wv', '.spx', '.tta', '.m4a', '.m4r', '.m4b', '.m4p', '.3g2', '.mp4', '.wma', '.asf', '.aif', '.aiff', '.wav', '.ape', '.mod', '.module', '.nst', '.wow', '.s3m', '.it', '.xm']
 		self.counter = 0
 		self.err_counter = 0
