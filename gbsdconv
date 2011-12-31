@@ -36,6 +36,15 @@ taglib.taglib_file_save.restype=c_int
 
 taglib.taglib_file_free.argtypes=[c_void_p]
 
+taglib.taglib_mpeg_file.argtypes=[c_void_p]
+taglib.taglib_mpeg_file.restype=c_void_p
+
+taglib.taglib_mpeg_file_save3.argtypes=[c_void_p, c_int, c_bool, c_int]
+taglib.taglib_mpeg_file_save3.restype=c_bool
+
+taglib.taglib_mpeg_file_strip.argtypes=[c_void_p, c_int]
+taglib.taglib_mpeg_file_strip.restype=c_bool
+
 taglib.taglib_file_tag.argtypes=[c_void_p]
 taglib.taglib_file_tag.restype=c_void_p
 
@@ -285,10 +294,6 @@ class gBsdConv(object):
 		self.operation_metatag_tab_init()
 
 		self.set_status("Hint: Right click for recursive operations")
-
-		#XXX to be implemented
-		builder.get_object('chk_remove_id3v1').set_visible(False)
-		builder.get_object('chk_use_id3v2_3').set_visible(False)
 
 		#launch
 		self.window.show()
@@ -1230,7 +1235,15 @@ class gBsdConv(object):
 						if not builder.get_object('chk_skip_genre').get_active():
 							taglib.taglib_tag_set_genre(tag, genre)
 
-						taglib.taglib_file_save(mfile)
+						mpeg=taglib.taglib_mpeg_file(mfile)
+						if mpeg and builder.get_object('chk_use_id3v2_3').get_active():
+							taglib.taglib_mpeg_file_save3(mpeg, 0xffff, False, 3)
+						else:
+							taglib.taglib_file_save(mfile)
+
+						if mpeg and builder.get_object('chk_remove_id3v1').get_active():
+							taglib.taglib_mpeg_file_strip(mpeg, 0x0001)
+
 						taglib.taglib_tag_free_strings()
 					taglib.taglib_file_free(mfile)
 				self.counter+=1
