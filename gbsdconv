@@ -654,6 +654,8 @@ class gBsdConv(object):
 		builder.get_object("chk_path_train").connect("clicked", self.conversion_apply_cb)
 		builder.get_object("conversion_clear").connect("clicked", lambda x: builder.get_object("conversion").set_text(""))
 
+		builder.get_object('chk_remove_id3v1').set_active(True)
+
 		self.last_add=None
 
 	def _cmp(self, x,y):
