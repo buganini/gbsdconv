@@ -268,7 +268,7 @@ class gBsdConv(object):
 		self.collision = 0
 		self.duplication = 0
 		self.converter = Bsdconvs("")
-		
+
 		self.inter_codecs = {}
 
 		self.item_tab_init()
@@ -279,6 +279,10 @@ class gBsdConv(object):
 		self.operation_metatag_tab_init()
 
 		self.set_status("Hint: Right click for recursive operations")
+
+		self.converter_mtime=0
+		self.items_mtime=0
+		self.items_selection_mtime=0
 
 		#XXX to be implemented
 		builder.get_object('chk_remove_id3v1').set_visible(False)
@@ -351,6 +355,7 @@ class gBsdConv(object):
 		mode, iter=tree.get_selection().get_selected()
 		if not iter:
 			return
+		self.items_selection_mtime+=1
 		ext=[x.strip() for x in builder.get_object('filter').get_text().split(';') if x.strip()!='']
 		if '\\a' in ext:
 			ext=['\\a']
@@ -719,6 +724,7 @@ class gBsdConv(object):
 		self.last_add='profile'
 
 	def conversion_apply_cb(self, obj):
+		self.converter_mtime+=1
 		self.converter = Bsdconvs(builder.get_object("conversion").get_text())
 		if self.converter:
 			self.set_status(str(self.converter))
@@ -729,8 +735,15 @@ class gBsdConv(object):
 	#+Text
 	def operation_text_tab_init(self):
 		text_origin_buffer = builder.get_object("text_origin").get_buffer()
-		text_origin_buffer.connect("changed", self.text_cb)
+		text_origin_buffer.connect("changed", self.text_changed)
 		builder.get_object("text_result").connect("draw", self.text_cb)
+
+		self.operation_text_origin_mtime=0
+
+		self.operation_text_result_mtime=(0,0) #converter, origin
+
+	def text_changed(slef, obj=None):
+		self.operation_text_origin_mtime+=1
 
 	def text_cb(self, obj1=None, obj2=None):
 		i=builder.get_object("text_origin").get_buffer()
@@ -771,7 +784,13 @@ class gBsdConv(object):
 
 		builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
+		self.operation_naming_mtime=(0,0,0) #converter, items, selection
+
 	def naming_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.items_mtime, self.items_selection_mtime)
+		if self.operation_naming_mtime==mtime:
+			return
+		self.operation_naming_mtime=mtime
 		naming = builder.get_object("naming")
 		self.err_counter=0
 		self.err_counter_selected=0
@@ -898,6 +917,7 @@ class gBsdConv(object):
 		return os.path.join(*ret)
 
 	def naming_items_toggle_cb(self, renderer, path):
+		self.items_selection_mtime+=1
 		iter=items.get_iter(path)
 		item=Item(iter)
 		if item.selected:
@@ -953,11 +973,15 @@ class gBsdConv(object):
 
 		chk_content_ignore_nontext=builder.get_object('chk_content_ignore_nontext')
 		chk_content_ignore_nontext.set_active(True)
-		chk_content_ignore_nontext.connect('clicked', self.content_cb)
+		chk_content_ignore_nontext.connect('clicked', self.chk_content_ignore_nontext_cb)
 
 		builder.get_object('content_convert').connect('clicked', self.content_convert)
 
 		content_items.connect("draw", self.content_cb)
+
+		self.operation_content_ignore_nontext_mtime=0
+
+		self.operation_content_mtime=(0,0,0) #converter, items, chk_ignore_nontext
 
 	def content_items_select_cb(self, obj):
 		model, iter = obj.get_selected()
@@ -976,7 +1000,15 @@ class gBsdConv(object):
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
+	def chk_content_ignore_nontext_cb(self, obj=None):
+		self.operation_content_ignore_nontext_mtime+=1
+		content_cb()
+
 	def content_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.items_mtime, self.operation_content_ignore_nontext_mtime)
+		if self.operation_content_mtime==mtime:
+			return
+		self.operation_content_mtime=mtime
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
@@ -1060,12 +1092,18 @@ class gBsdConv(object):
 
 		builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
 
+		self.operation_metatag_mtime=(0,0) #converter, items
+
 	def metatag_cb(self, obj1=None, obj2=None):
-		metatag_items = builder.get_object("metatag_items")
-		metatag_items.expand_all()
+		mtime=(self.converter_mtime, self.items_mtime)
+		if self.operation_metatag_mtime==mtime:
+			return
+		self.operation_metatag_mtime=mtime
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.metatag_info(None)
+		metatag_items = builder.get_object("metatag_items")
+		metatag_items.expand_all()
 		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def metatag_info(self, parent):
