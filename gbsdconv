@@ -67,23 +67,25 @@ taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
 taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
 
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
-	'info':		2,
-	'name2':	3,	#used by naming operation
-	'name1':	4,	#name2 or name0 if there are duplication or collision
-	'uname0':	5,	#utf8er(name0)
-	'uname1':	6,	#utf8er(name1)
-	'lname0':	7,	#utf8er(name0 + target0)
-	'lname1':	8,	#utf8er(name1 + target1)
-	'uname2':	9,	#utf8er(name2) (unused)
-	'error_counter':10,
-	'collision':	11,
-	'duplication':	12,
-	'target0':	13,	#symlink target0
-	'target1':	14,	#symlink target1
+	'name2':	2,	#used by naming operation
+	'name1':	3,	#name2 or name0 if there are duplication or collision
+	'uname0':	4,	#utf8er(name0)
+	'uname1':	5,	#utf8er(name1)
+	'lname0':	6,	#utf8er(name0 + target0)
+	'lname1':	7,	#utf8er(name1 + target1)
+	'uname2':	8,	#utf8er(name2) (unused)
+	'error_counter':9,
+	'collision':	10,
+	'duplication':	11,
+	'target0':	12,	#symlink target0
+	'target1':	13,	#symlink target1
+	'naming_info':	14,
+	'content_info':	15,
+	'metatag_info':	16,
 }
 
 class Bsdconvs(object):
@@ -416,6 +418,7 @@ class gBsdConv(object):
 		mode, iter=tree.get_selection().get_selected()
 		if not iter:
 			return
+		self.items_selection_mtime+=1
 		if obj.get_label()=="Inverse":
 			self.item_toggle_cb_r(iter, -1)
 		elif obj.get_label()=="Select":
@@ -500,6 +503,7 @@ class gBsdConv(object):
 		builder.get_object('filter').set_text(self.filter_profiles[builder.get_object('filter_profiles').get_active_iter()][1])
 
 	def item_add_cb(self, obj):
+		self.items_mtime+=1
 		recur = obj==builder.get_object("item_add_r")
 		for path in builder.get_object("item_chooser").get_filenames():
 			self.item_add_cb_r(path, recur)
@@ -530,12 +534,13 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', '', '', '', ''])
 			else:
 				if i==len(a)-1:
 					items[curr][attr_map['selected']]=1
 
 	def item_remove_cb(self, obj):
+		self.items_mtime+=1
 		model, treeiter = builder.get_object("items").get_selection().get_selected()
 		if treeiter:
 			model.remove(treeiter)
@@ -774,7 +779,7 @@ class gBsdConv(object):
 		naming.append_column(items_path2)
 
 		renderer = Gtk.CellRendererText()
-		info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['naming_info'])
 		naming.append_column(info)
 
 		naming.set_model(items)
@@ -797,6 +802,7 @@ class gBsdConv(object):
 		self.collision=0
 		self.duplication=0
 		self.naming_cb_r(None)
+		self.naming_cb_r_sym(None)
 		self.set_status('Error: %d Collision: %d Duplication: %d' % (self.err_counter_selected, self.collision, self.duplication))
 		naming.expand_all()
 
@@ -841,7 +847,6 @@ class gBsdConv(object):
 			if items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = items.iter_next(curr)
-		self.naming_cb_r_sym(parent)
 
 	def naming_cb_r_sym(self, parent): #must be after naming_cb_r, or this may use uncooked name1
 		curr = items.iter_children(parent)
@@ -889,7 +894,7 @@ class gBsdConv(object):
 
 	def gen_naming_display(self, curr):
 		item=Item(curr)
-		item.info=''.join((item.error_counter,item.collision,item.duplication))
+		item.naming_info=''.join((item.error_counter,item.collision,item.duplication))
 		item.uname0=self.utf8er.conv(item.name0)
 		if item.target0=='':
 			item.lname0=item.uname0
@@ -962,7 +967,7 @@ class gBsdConv(object):
 		content_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['content_info'])
 		content_items.append_column(items_info)
 
 		content_items.set_model(items)
@@ -1024,12 +1029,12 @@ class gBsdConv(object):
 				i=self.converter.info()
 				err=i['ierr']+i['oerr']
 				if err>0:
-					item.info=str(err)
+					item.content_info=str(err)
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
 				else:
-					item.info=''
+					item.content_info=''
 			if items.iter_has_child(curr):
 				self.content_cb_r(curr)
 			curr = items.iter_next(curr)
@@ -1065,7 +1070,7 @@ class gBsdConv(object):
 		metatag_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['metatag_info'])
 		metatag_items.append_column(items_info)
 
 		metatag_items.set_model(items)
@@ -1102,15 +1107,14 @@ class gBsdConv(object):
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.metatag_info(None)
-		metatag_items = builder.get_object("metatag_items")
-		metatag_items.expand_all()
+		builder.get_object("metatag_items").expand_all()
 		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def metatag_info(self, parent):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			item.info=''
+			item.metatag_info=''
 			fullpath=item.fullpath
 			if os.path.isfile(fullpath):
 				mfile=taglib.taglib_file_new(fullpath)
@@ -1136,7 +1140,7 @@ class gBsdConv(object):
 				info=self.converter.info()
 				err=info['ierr']+info['oerr']
 				if err>0:
-					item.info=str(err)
+					item.metatag_info=str(err)
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
