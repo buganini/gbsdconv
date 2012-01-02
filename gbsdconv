@@ -76,23 +76,25 @@ taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
 taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
 
 
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
 attr_map={
 	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
 	'name0':	1,
-	'info':		2,
-	'name2':	3,	#used by naming operation
-	'name1':	4,	#name2 or name0 if there are duplication or collision
-	'uname0':	5,	#utf8er(name0)
-	'uname1':	6,	#utf8er(name1)
-	'lname0':	7,	#utf8er(name0 + target0)
-	'lname1':	8,	#utf8er(name1 + target1)
-	'uname2':	9,	#utf8er(name2) (unused)
-	'error_counter':10,
-	'collision':	11,
-	'duplication':	12,
-	'target0':	13,	#symlink target0
-	'target1':	14,	#symlink target1
+	'name2':	2,	#used by naming operation
+	'name1':	3,	#name2 or name0 if there are duplication or collision
+	'uname0':	4,	#utf8er(name0)
+	'uname1':	5,	#utf8er(name1)
+	'lname0':	6,	#utf8er(name0 + target0)
+	'lname1':	7,	#utf8er(name1 + target1)
+	'uname2':	8,	#utf8er(name2) (unused)
+	'error_counter':9,
+	'collision':	10,
+	'duplication':	11,
+	'target0':	12,	#symlink target0
+	'target1':	13,	#symlink target1
+	'naming_info':	14,
+	'content_info':	15,
+	'metatag_info':	16,
 }
 
 class Bsdconvs(object):
@@ -277,14 +279,8 @@ class gBsdConv(object):
 		self.collision = 0
 		self.duplication = 0
 		self.converter = Bsdconvs("")
-		
+
 		self.inter_codecs = {}
-
-		main_tabs = builder.get_object("main_tabs")
-		main_tabs.connect("switch-page", self.main_tabs_cb)
-
-		operation_page = builder.get_object("operation_page")
-		operation_page.connect("switch-page", self.operation_page_cb)
 
 		self.item_tab_init()
 		self.conversion_tab_init()
@@ -295,27 +291,12 @@ class gBsdConv(object):
 
 		self.set_status("Hint: Right click for recursive operations")
 
+		self.converter_mtime=0
+		self.items_mtime=0
+		self.items_selection_mtime=0
+
 		#launch
 		self.window.show()
-
-	#Callbacks
-	def main_tabs_cb(self, notebook, page, pagen):
-		operation_page = builder.get_object("operation_page")
-		operation_curr_page = operation_page.get_nth_page(operation_page.get_current_page())
-		if page==builder.get_object("items_page"):
-			self.set_status("Hint: Right click for recursive operations")
-			if self.items_chooser_pwd:
-				builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
-		elif page == operation_page:
-			if operation_curr_page == builder.get_object("operation_text_page"):
-				self.text_cb(None)
-			elif operation_curr_page == builder.get_object("operation_naming_page"):
-				self.naming_cb()
-			elif operation_curr_page == builder.get_object("operation_content_page"):
-				self.content_cb(None)
-			elif operation_curr_page == builder.get_object("operation_metatag_page"):
-				self.metatag_cb()
-
 
 	#Callbacks for items tab
 	def item_tab_init(self):
@@ -335,7 +316,7 @@ class gBsdConv(object):
 		builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
 		builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
-		self.items_chooser_pwd=None
+		self.item_chooser_pwd=None
 
 		self.filter_profiles = Gtk.ListStore(str, str)
 		self.filter_profiles.append(['All', '\\a'])
@@ -352,6 +333,12 @@ class gBsdConv(object):
 		filter_profiles.connect('changed', self.filter_profiles_cb)
 
 		builder.get_object("item_chooser").connect('current-folder-changed', self.item_chooser_cd_cb)
+		builder.get_object("items_page").connect('draw', self.item_tab_cb)
+
+	def item_tab_cb(self, obj1=None, obj2=None):
+		self.set_status("Hint: Right click for recursive operations")
+		if self.item_chooser_pwd:
+			builder.get_object("item_chooser").set_current_folder_uri(self.item_chooser_pwd)
 
 	def filter_match(self, item, filter):
 		for t in filter:
@@ -375,6 +362,7 @@ class gBsdConv(object):
 		mode, iter=tree.get_selection().get_selected()
 		if not iter:
 			return
+		self.items_selection_mtime+=1
 		ext=[x.strip() for x in builder.get_object('filter').get_text().split(';') if x.strip()!='']
 		if '\\a' in ext:
 			ext=['\\a']
@@ -435,6 +423,7 @@ class gBsdConv(object):
 		mode, iter=tree.get_selection().get_selected()
 		if not iter:
 			return
+		self.items_selection_mtime+=1
 		if obj.get_label()=="Inverse":
 			self.item_toggle_cb_r(iter, -1)
 		elif obj.get_label()=="Select":
@@ -519,6 +508,7 @@ class gBsdConv(object):
 		builder.get_object('filter').set_text(self.filter_profiles[builder.get_object('filter_profiles').get_active_iter()][1])
 
 	def item_add_cb(self, obj):
+		self.items_mtime+=1
 		recur = obj==builder.get_object("item_add_r")
 		for path in builder.get_object("item_chooser").get_filenames():
 			self.item_add_cb_r(path, recur)
@@ -549,12 +539,13 @@ class gBsdConv(object):
 					selected=1
 				else:
 					selected=-1
-				parent = items.append(parent, [selected, p, '', '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', ''])
+				parent = items.append(parent, [selected, p, '', '', self.utf8er.conv(p), '', '', '', '', '', '', '', '', '', '', '', ''])
 			else:
 				if i==len(a)-1:
 					items[curr][attr_map['selected']]=1
 
 	def item_remove_cb(self, obj):
+		self.items_mtime+=1
 		model, treeiter = builder.get_object("items").get_selection().get_selected()
 		if treeiter:
 			model.remove(treeiter)
@@ -745,6 +736,7 @@ class gBsdConv(object):
 		self.last_add='profile'
 
 	def conversion_apply_cb(self, obj):
+		self.converter_mtime+=1
 		self.converter = Bsdconvs(builder.get_object("conversion").get_text())
 		if self.converter:
 			self.set_status(str(self.converter))
@@ -755,9 +747,17 @@ class gBsdConv(object):
 	#+Text
 	def operation_text_tab_init(self):
 		text_origin_buffer = builder.get_object("text_origin").get_buffer()
-		text_origin_buffer.connect("changed", self.text_cb)
+		text_origin_buffer.connect("changed", self.text_changed)
+		builder.get_object("text_result").connect("draw", self.text_cb)
 
-	def text_cb(self, obj):
+		self.operation_text_origin_mtime=0
+
+		self.operation_text_result_mtime=(0,0) #converter, origin
+
+	def text_changed(slef, obj=None):
+		self.operation_text_origin_mtime+=1
+
+	def text_cb(self, obj1=None, obj2=None):
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
@@ -786,32 +786,30 @@ class gBsdConv(object):
 		naming.append_column(items_path2)
 
 		renderer = Gtk.CellRendererText()
-		info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['naming_info'])
 		naming.append_column(info)
 
 		naming.set_model(items)
 
 		naming.connect("button-press-event", self.items_button_press)
+		naming.connect("draw", self.naming_cb)
 
 		builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
-	def operation_page_cb(self, notebook, page, pagen):
-		if page == builder.get_object("operation_text_page"):
-			self.text_cb(None)
-		elif page == builder.get_object("operation_naming_page"):
-			self.naming_cb()
-		elif page == builder.get_object("operation_content_page"):
-			self.content_cb(None)
-		elif page == builder.get_object("operation_metatag_page"):
-			self.metatag_cb()
+		self.operation_naming_mtime=(0,0,0) #converter, items, selection
 
-	def naming_cb(self):
+	def naming_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.items_mtime, self.items_selection_mtime)
+		if self.operation_naming_mtime==mtime:
+			return
+		self.operation_naming_mtime=mtime
 		naming = builder.get_object("naming")
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.collision=0
 		self.duplication=0
 		self.naming_cb_r(None)
+		self.naming_cb_r_sym(None)
 		self.set_status('Error: %d Collision: %d Duplication: %d' % (self.err_counter_selected, self.collision, self.duplication))
 		naming.expand_all()
 
@@ -856,7 +854,6 @@ class gBsdConv(object):
 			if items.iter_has_child(curr):
 				self.naming_cb_r(curr)
 			curr = items.iter_next(curr)
-		self.naming_cb_r_sym(parent)
 
 	def naming_cb_r_sym(self, parent): #must be after naming_cb_r, or this may use uncooked name1
 		curr = items.iter_children(parent)
@@ -904,7 +901,7 @@ class gBsdConv(object):
 
 	def gen_naming_display(self, curr):
 		item=Item(curr)
-		item.info=''.join((item.error_counter,item.collision,item.duplication))
+		item.naming_info=''.join((item.error_counter,item.collision,item.duplication))
 		item.uname0=self.utf8er.conv(item.name0)
 		if item.target0=='':
 			item.lname0=item.uname0
@@ -932,6 +929,7 @@ class gBsdConv(object):
 		return os.path.join(*ret)
 
 	def naming_items_toggle_cb(self, renderer, path):
+		self.items_selection_mtime+=1
 		iter=items.get_iter(path)
 		item=Item(iter)
 		if item.selected:
@@ -976,7 +974,7 @@ class gBsdConv(object):
 		content_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['content_info'])
 		content_items.append_column(items_info)
 
 		content_items.set_model(items)
@@ -987,9 +985,15 @@ class gBsdConv(object):
 
 		chk_content_ignore_nontext=builder.get_object('chk_content_ignore_nontext')
 		chk_content_ignore_nontext.set_active(True)
-		chk_content_ignore_nontext.connect('clicked', self.content_cb)
+		chk_content_ignore_nontext.connect('clicked', self.chk_content_ignore_nontext_cb)
 
 		builder.get_object('content_convert').connect('clicked', self.content_convert)
+
+		content_items.connect("draw", self.content_cb)
+
+		self.operation_content_ignore_nontext_mtime=0
+
+		self.operation_content_mtime=(0,0,0) #converter, items, chk_ignore_nontext
 
 	def content_items_select_cb(self, obj):
 		model, iter = obj.get_selected()
@@ -1008,7 +1012,15 @@ class gBsdConv(object):
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
-	def content_cb(self, obj):
+	def chk_content_ignore_nontext_cb(self, obj=None):
+		self.operation_content_ignore_nontext_mtime+=1
+		content_cb()
+
+	def content_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.items_mtime, self.operation_content_ignore_nontext_mtime)
+		if self.operation_content_mtime==mtime:
+			return
+		self.operation_content_mtime=mtime
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
@@ -1024,12 +1036,12 @@ class gBsdConv(object):
 				i=self.converter.info()
 				err=i['ierr']+i['oerr']
 				if err>0:
-					item.info=str(err)
+					item.content_info=str(err)
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
 				else:
-					item.info=''
+					item.content_info=''
 			if items.iter_has_child(curr):
 				self.content_cb_r(curr)
 			curr = items.iter_next(curr)
@@ -1065,12 +1077,13 @@ class gBsdConv(object):
 		metatag_items.set_expander_column(items_path)
 
 		renderer = Gtk.CellRendererText()
-		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['info'])
+		items_info = Gtk.TreeViewColumn("Info", renderer, text=attr_map['metatag_info'])
 		metatag_items.append_column(items_info)
 
 		metatag_items.set_model(items)
 
 		metatag_items.connect("button-press-event", self.items_button_press)
+		metatag_items.connect("draw", self.metatag_cb)
 
 		metatag_items.get_selection().connect("changed", self.metatag_items_select_cb)
 
@@ -1091,23 +1104,29 @@ class gBsdConv(object):
 
 		builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
 
-	def metatag_cb(self):
-		metatag_items = builder.get_object("metatag_items")
-		metatag_items.expand_all()
+		self.operation_metatag_mtime=(0,0) #converter, items
+
+	def metatag_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.items_mtime)
+		if self.operation_metatag_mtime==mtime:
+			return
+		self.operation_metatag_mtime=mtime
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.metatag_info(None)
+		builder.get_object("metatag_items").expand_all()
 		self.set_status('Error: %d (Selected: %d)' % (self.err_counter, self.err_counter_selected))
 
 	def metatag_info(self, parent):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			item.info=''
+			item.metatag_info=''
 			fullpath=item.fullpath
 			if os.path.isfile(fullpath):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
+					self.set_status(fullpath)
 					if taglib.taglib_file_is_valid(mfile):
 						self.converter.score_clear()
 						self.converter.score_train(fullpath)
@@ -1128,7 +1147,7 @@ class gBsdConv(object):
 				info=self.converter.info()
 				err=info['ierr']+info['oerr']
 				if err>0:
-					item.info=str(err)
+					item.metatag_info=str(err)
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
