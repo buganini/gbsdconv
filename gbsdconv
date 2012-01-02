@@ -271,12 +271,6 @@ class gBsdConv(object):
 		
 		self.inter_codecs = {}
 
-		main_tabs = builder.get_object("main_tabs")
-		main_tabs.connect("switch-page", self.main_tabs_cb)
-
-		operation_page = builder.get_object("operation_page")
-		operation_page.connect("switch-page", self.operation_page_cb)
-
 		self.item_tab_init()
 		self.conversion_tab_init()
 		self.operation_text_tab_init()
@@ -292,25 +286,6 @@ class gBsdConv(object):
 
 		#launch
 		self.window.show()
-
-	#Callbacks
-	def main_tabs_cb(self, notebook, page, pagen):
-		operation_page = builder.get_object("operation_page")
-		operation_curr_page = operation_page.get_nth_page(operation_page.get_current_page())
-		if page==builder.get_object("items_page"):
-			self.set_status("Hint: Right click for recursive operations")
-			if self.items_chooser_pwd:
-				builder.get_object("item_chooser").set_current_folder_uri(self.items_chooser_pwd)
-		elif page == operation_page:
-			if operation_curr_page == builder.get_object("operation_text_page"):
-				self.text_cb(None)
-			elif operation_curr_page == builder.get_object("operation_naming_page"):
-				self.naming_cb()
-			elif operation_curr_page == builder.get_object("operation_content_page"):
-				self.content_cb(None)
-			elif operation_curr_page == builder.get_object("operation_metatag_page"):
-				self.metatag_cb()
-
 
 	#Callbacks for items tab
 	def item_tab_init(self):
@@ -330,7 +305,7 @@ class gBsdConv(object):
 		builder.get_object("item_remove").connect("clicked", self.item_remove_cb)
 		builder.get_object("item_remove_selected_leaves").connect("clicked", self.item_remove_selected_leaves_cb)
 
-		self.items_chooser_pwd=None
+		self.item_chooser_pwd=None
 
 		self.filter_profiles = Gtk.ListStore(str, str)
 		self.filter_profiles.append(['All', '\\a'])
@@ -347,6 +322,12 @@ class gBsdConv(object):
 		filter_profiles.connect('changed', self.filter_profiles_cb)
 
 		builder.get_object("item_chooser").connect('current-folder-changed', self.item_chooser_cd_cb)
+		builder.get_object("items_page").connect('draw', self.item_tab_cb)
+
+	def item_tab_cb(self, obj1=None, obj2=None):
+		self.set_status("Hint: Right click for recursive operations")
+		if self.item_chooser_pwd:
+			builder.get_object("item_chooser").set_current_folder_uri(self.item_chooser_pwd)
 
 	def filter_match(self, item, filter):
 		for t in filter:
@@ -749,8 +730,9 @@ class gBsdConv(object):
 	def operation_text_tab_init(self):
 		text_origin_buffer = builder.get_object("text_origin").get_buffer()
 		text_origin_buffer.connect("changed", self.text_cb)
+		builder.get_object("text_result").connect("draw", self.text_cb)
 
-	def text_cb(self, obj):
+	def text_cb(self, obj1=None, obj2=None):
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
@@ -785,20 +767,11 @@ class gBsdConv(object):
 		naming.set_model(items)
 
 		naming.connect("button-press-event", self.items_button_press)
+		naming.connect("draw", self.naming_cb)
 
 		builder.get_object('naming_convert').connect('clicked', self.naming_convert)
 
-	def operation_page_cb(self, notebook, page, pagen):
-		if page == builder.get_object("operation_text_page"):
-			self.text_cb(None)
-		elif page == builder.get_object("operation_naming_page"):
-			self.naming_cb()
-		elif page == builder.get_object("operation_content_page"):
-			self.content_cb(None)
-		elif page == builder.get_object("operation_metatag_page"):
-			self.metatag_cb()
-
-	def naming_cb(self):
+	def naming_cb(self, obj1=None, obj2=None):
 		naming = builder.get_object("naming")
 		self.err_counter=0
 		self.err_counter_selected=0
@@ -984,6 +957,8 @@ class gBsdConv(object):
 
 		builder.get_object('content_convert').connect('clicked', self.content_convert)
 
+		content_items.connect("draw", self.content_cb)
+
 	def content_items_select_cb(self, obj):
 		model, iter = obj.get_selected()
 		if iter != None:
@@ -1001,7 +976,7 @@ class gBsdConv(object):
 			else:
 				self.set_status("%s is not a file" % fullpath)
 
-	def content_cb(self, obj):
+	def content_cb(self, obj1=None, obj2=None):
 		self.err_counter=0
 		self.err_counter_selected=0
 		self.content_cb_r(None)
@@ -1064,6 +1039,7 @@ class gBsdConv(object):
 		metatag_items.set_model(items)
 
 		metatag_items.connect("button-press-event", self.items_button_press)
+		metatag_items.connect("draw", self.metatag_cb)
 
 		metatag_items.get_selection().connect("changed", self.metatag_items_select_cb)
 
@@ -1084,7 +1060,7 @@ class gBsdConv(object):
 
 		builder.get_object('metatag_convert').connect('clicked', self.metatag_convert)
 
-	def metatag_cb(self):
+	def metatag_cb(self, obj1=None, obj2=None):
 		metatag_items = builder.get_object("metatag_items")
 		metatag_items.expand_all()
 		self.err_counter=0
@@ -1101,6 +1077,7 @@ class gBsdConv(object):
 			if os.path.isfile(fullpath):
 				mfile=taglib.taglib_file_new(fullpath)
 				if mfile!=None:
+					self.set_status(fullpath)
 					if taglib.taglib_file_is_valid(mfile):
 						self.converter.score_clear()
 						self.converter.score_train(fullpath)
