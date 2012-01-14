@@ -1007,7 +1007,7 @@ class gBsdConv(object):
 
 	def chk_content_ignore_nontext_cb(self, obj=None):
 		self.operation_content_ignore_nontext_mtime+=1
-		content_cb()
+		self.content_cb()
 
 	def content_cb(self, obj1=None, obj2=None):
 		mtime=(self.converter_mtime, self.items_mtime, self.operation_content_ignore_nontext_mtime)
@@ -1048,7 +1048,7 @@ class gBsdConv(object):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			if item.selected>0:
+			if item.selected>0 and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				fullpath=item.fullpath
 				self.converter.conv_file(fullpath, fullpath)
 				self.counter+=1
