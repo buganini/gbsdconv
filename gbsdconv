@@ -1137,13 +1137,13 @@ class gBsdConv(object):
 						taglib.taglib_tag_free_strings()
 
 					taglib.taglib_file_free(mfile)
-				info=self.converter.info()
-				err=info['ierr']+info['oerr']
-				if err>0:
-					item.metatag_info=str(err)
-					self.err_counter+=1
-					if item.selected>0:
-						self.err_counter_selected+=1
+					info=self.converter.info()
+					err=info['ierr']+info['oerr']
+					if err>0:
+						item.metatag_info=str(err)
+						self.err_counter+=1
+						if item.selected>0:
+							self.err_counter_selected+=1
 
 			if items.iter_has_child(curr):
 				self.metatag_info(curr)
