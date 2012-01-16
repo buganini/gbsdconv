@@ -197,7 +197,6 @@ class Bsdconvs(object):
 		return
 		
 	def testconv_file(self, str):
-		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(str)
 			score=self.weighted_score(c.info())
@@ -207,6 +206,7 @@ class Bsdconvs(object):
 			elif score>max_score:
 				self.lastc=k
 				max_score=score
+		self.cinfo=self.evaluaters[self.lastc].info()
 		return
 
 	def info(self):
