@@ -186,7 +186,7 @@ class Bsdconvs(object):
 		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(ifile)
-			score+=self.weighted_score(c.info())
+			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
 				max_score=score
@@ -747,7 +747,7 @@ class gBsdConv(object):
 
 		self.operation_text_result_mtime=(0,0) #converter, origin
 
-	def text_changed(slef, obj=None):
+	def text_changed(self, obj=None):
 		self.operation_text_origin_mtime+=1
 
 	def text_cb(self, obj1=None, obj2=None):
