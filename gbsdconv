@@ -200,14 +200,13 @@ class Bsdconvs(object):
 		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(str)
-			i=c.info()
-			err=i['ierr']+i['oerr']
+			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
-				e=i['ierr']+i['oerr']
-			elif err<e:
+				max_score=score
+			elif score>max_score:
 				self.lastc=k
-				e=err
+				max_score=score
 		return
 
 	def info(self):
