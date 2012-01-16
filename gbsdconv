@@ -1024,6 +1024,7 @@ class gBsdConv(object):
 		while curr != None:
 			item=Item(curr)
 			fullpath=item.fullpath
+			item.content_info=''
 			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
 				i=self.converter.info()
@@ -1033,8 +1034,6 @@ class gBsdConv(object):
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
-				else:
-					item.content_info=''
 			if items.iter_has_child(curr):
 				self.content_cb_r(curr)
 			curr = items.iter_next(curr)
