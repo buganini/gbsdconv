@@ -195,7 +195,7 @@ class Bsdconvs(object):
 		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(ifile)
-			score+=self.weighted_score(c.info())
+			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
 				max_score=score
@@ -206,17 +206,16 @@ class Bsdconvs(object):
 		return
 		
 	def testconv_file(self, str):
-		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(str)
-			i=c.info()
-			err=i['ierr']+i['oerr']
+			score=self.weighted_score(c.info())
 			if k==0:
 				self.lastc=0
-				e=i['ierr']+i['oerr']
-			elif err<e:
+				max_score=score
+			elif score>max_score:
 				self.lastc=k
-				e=err
+				max_score=score
+		self.cinfo=self.evaluaters[self.lastc].info()
 		return
 
 	def info(self):
@@ -271,7 +270,7 @@ class gBsdConv(object):
 		self.utf8er = Bsdconv('utf-8,3f:utf-8,3f')
 
 		#Global objects
-		self.text_extensions=['.txt', '.xml', '.sql', '.htm', '.html', '.cue', '.c', '.cc', '.h', '.cpp', '.cxx', '.php', '.pl', '.py', '.rb', '.php3', '.phtml', '.csv', '.log', '.text', '.utxt']
+		self.text_extensions=['.txt', '.xml', '.sql', '.htm', '.html', '.cue', '.c', '.cc', '.h', '.cpp', '.cxx', '.php', '.pl', '.py', '.rb', '.php3', '.phtml', '.csv', '.log', '.text', '.utxt', '.srt']
 		self.multimedia_extensions=['.ogg', '.flac', '.oga', '.mp3', '.mpc', '.wv', '.spx', '.tta', '.m4a', '.m4r', '.m4b', '.m4p', '.3g2', '.mp4', '.wma', '.asf', '.aif', '.aiff', '.wav', '.ape', '.mod', '.module', '.nst', '.wow', '.s3m', '.it', '.xm']
 		self.counter = 0
 		self.err_counter = 0
@@ -754,7 +753,7 @@ class gBsdConv(object):
 
 		self.operation_text_result_mtime=(0,0) #converter, origin
 
-	def text_changed(slef, obj=None):
+	def text_changed(self, obj=None):
 		self.operation_text_origin_mtime+=1
 
 	def text_cb(self, obj1=None, obj2=None):
@@ -1014,7 +1013,7 @@ class gBsdConv(object):
 
 	def chk_content_ignore_nontext_cb(self, obj=None):
 		self.operation_content_ignore_nontext_mtime+=1
-		content_cb()
+		self.content_cb()
 
 	def content_cb(self, obj1=None, obj2=None):
 		mtime=(self.converter_mtime, self.items_mtime, self.operation_content_ignore_nontext_mtime)
@@ -1031,6 +1030,7 @@ class gBsdConv(object):
 		while curr != None:
 			item=Item(curr)
 			fullpath=item.fullpath
+			item.content_info=''
 			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
 				i=self.converter.info()
@@ -1040,8 +1040,6 @@ class gBsdConv(object):
 					self.err_counter+=1
 					if item.selected>0:
 						self.err_counter_selected+=1
-				else:
-					item.content_info=''
 			if items.iter_has_child(curr):
 				self.content_cb_r(curr)
 			curr = items.iter_next(curr)
@@ -1055,7 +1053,7 @@ class gBsdConv(object):
 		curr = items.iter_children(parent)
 		while curr != None:
 			item=Item(curr)
-			if item.selected>0:
+			if item.selected>0 and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				fullpath=item.fullpath
 				self.converter.conv_file(fullpath, fullpath)
 				self.counter+=1
@@ -1144,13 +1142,13 @@ class gBsdConv(object):
 						taglib.taglib_tag_free_strings()
 
 					taglib.taglib_file_free(mfile)
-				info=self.converter.info()
-				err=info['ierr']+info['oerr']
-				if err>0:
-					item.metatag_info=str(err)
-					self.err_counter+=1
-					if item.selected>0:
-						self.err_counter_selected+=1
+					info=self.converter.info()
+					err=info['ierr']+info['oerr']
+					if err>0:
+						item.metatag_info=str(err)
+						self.err_counter+=1
+						if item.selected>0:
+							self.err_counter_selected+=1
 
 			if items.iter_has_child(curr):
 				self.metatag_info(curr)
