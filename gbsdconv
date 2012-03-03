@@ -754,6 +754,7 @@ class gBsdConv(object):
 
 	def text_changed(self, obj=None):
 		self.operation_text_origin_mtime+=1
+		self.text_cb()
 
 	def text_cb(self, obj1=None, obj2=None):
 		i=builder.get_object("text_origin").get_buffer()
