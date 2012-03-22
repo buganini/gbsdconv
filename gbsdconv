@@ -640,6 +640,9 @@ class gBsdConv(object):
 		builder.get_object("mistreat_arg2").set_text("iso-8859-1")
 		builder.get_object("mistreat_add").connect("clicked", self.mistreat_add_cb)
 
+		builder.get_object("factor_ierr").connect("changed", self.bump_converter_mtime)
+		builder.get_object("factor_oerr").connect("changed", self.bump_converter_mtime)
+		builder.get_object("factor_score").connect("changed", self.bump_converter_mtime)
 		builder.get_object("conversion").connect("changed", self.conversion_apply_cb)
 		builder.get_object("chk_path_train").connect("clicked", self.conversion_apply_cb)
 		builder.get_object("conversion_clear").connect("clicked", lambda x: builder.get_object("conversion").set_text(""))
@@ -734,6 +737,9 @@ class gBsdConv(object):
 		conversion.set_text('%s%sutf-8:%s|%s:utf-8' % (conversion.get_text(), op[self.last_add], builder.get_object('mistreat_arg2').get_text(), builder.get_object('mistreat_arg1').get_text()))
 		self.last_add='profile'
 
+	def bump_converter_mtime(self, *arg):
+		self.converter_mtime+=1
+
 	def conversion_apply_cb(self, obj):
 		self.converter_mtime+=1
 		self.converter = Bsdconvs(builder.get_object("conversion").get_text())
@@ -755,6 +761,7 @@ class gBsdConv(object):
 
 	def text_changed(self, obj=None):
 		self.operation_text_origin_mtime+=1
+		self.text_cb()
 
 	def text_cb(self, obj1=None, obj2=None):
 		i=builder.get_object("text_origin").get_buffer()
