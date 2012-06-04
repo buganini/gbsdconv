@@ -956,8 +956,10 @@ class gBsdConv(object):
 					os.symlink(item.target1, item.name1)
 				else:
 					os.rename(item.name0, item.name1)
+				item.name0=item.name1
 				self.counter+=1
 			curr = items.iter_next(curr)
+		self.naming_cb_r_sym(None)
 
 	#+Content
 	def operation_content_tab_init(self):
