@@ -648,6 +648,7 @@ class gBsdConv(object):
 		builder.get_object("conversion_clear").connect("clicked", lambda x: builder.get_object("conversion").set_text(""))
 
 		builder.get_object('chk_remove_id3v1').set_active(True)
+		builder.get_object('chk_use_id3v2_3').set_active(True)
 
 		self.last_add=None
 
