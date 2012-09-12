@@ -1,0 +1,68 @@
+diff --git a/taglib/tag_c.cpp b/taglib/tag_c.cpp
+index b1af613..0254199 100644
+--- a/taglib/tag_c.cpp
++++ b/taglib/tag_c.cpp
+@@ -292,3 +292,25 @@ void taglib_id3v2_set_default_text_encoding(TagLib_ID3v2_Encoding encoding)
+ 
+   ID3v2::FrameFactory::instance()->setDefaultTextEncoding(type);
+ }
++
++////////////////////////////////////////////////////////////////////////////////
++// TagLib::MPEG::File wrapper
++////////////////////////////////////////////////////////////////////////////////
++
++TagLib_Mpeg_File *taglib_mpeg_file(TagLib_File *file)
++{
++  return reinterpret_cast<TagLib_Mpeg_File *>(dynamic_cast<MPEG::File *>(reinterpret_cast<File *>(file)));
++}
++
++BOOL taglib_mpeg_file_save3(TagLib_Mpeg_File *file, int tags, BOOL stripOthers, int id3v2Version)
++{
++  MPEG::File *f=reinterpret_cast<MPEG::File *>(file);
++  return f->save(tags, (bool)stripOthers, id3v2Version);
++}
++
++BOOL taglib_mpeg_file_strip(TagLib_Mpeg_File *file, int tags)
++{
++  MPEG::File *f=reinterpret_cast<MPEG::File *>(file);
++  return f->strip(tags);
++
++}
+diff --git a/taglib/tag_c.h b/taglib/tag_c.h
+index ab5dd20..36ef975 100644
+--- a/taglib/tag_c.h
++++ b/taglib/tag_c.h
+@@ -63,6 +63,7 @@ extern "C" {
+ typedef struct { int dummy; } TagLib_File;
+ typedef struct { int dummy; } TagLib_Tag;
+ typedef struct { int dummy; } TagLib_AudioProperties;
++typedef struct { int dummy; } TagLib_Mpeg_File;
+ 
+ /*!
+  * By default all strings coming into or out of TagLib's C API are in UTF8.
+@@ -273,6 +274,25 @@ TAGLIB_C_EXPORT int taglib_audioproperties_samplerate(const TagLib_AudioProperti
+  */
+ TAGLIB_C_EXPORT int taglib_audioproperties_channels(const TagLib_AudioProperties *audioProperties);
+ 
++/******************************************************************************
++ * Mpeg File API
++ ******************************************************************************/
++
++/*!
++ * Returns the casted mpeg file pointer of this file.
++ */
++TAGLIB_C_EXPORT TagLib_Mpeg_File *taglib_mpeg_file(TagLib_File *file);
++
++/*!
++ * bool TagLib::MPEG:File::save(int tags, bool stripOthers, int id3v2Version);
++ */
++TAGLIB_C_EXPORT BOOL taglib_mpeg_file_save3(TagLib_Mpeg_File *file, int tags, BOOL stripOthers, int id3v2Version);
++
++/*!
++ * bool TagLib::MPEG:File::strip(int tags);
++ */
++TAGLIB_C_EXPORT BOOL taglib_mpeg_file_strip(TagLib_Mpeg_File *file, int tags);
++
+ /*******************************************************************************
+  * Special convenience ID3v2 functions
+  *******************************************************************************/
