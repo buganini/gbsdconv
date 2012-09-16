@@ -1,6 +1,6 @@
 PREFIX?=/usr/local
 
-LIBS=-ltag
+LIBS=-L${PREFIX}/lib -ltag
 
 all: gbsdconv_taglib
 
