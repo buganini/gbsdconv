@@ -18,7 +18,6 @@
 
 import os
 import sys
-import tempfile
 from bsdconv import *
 from ctypes import *
 from gi.repository import Gtk, Gdk
@@ -111,9 +110,10 @@ class Bsdconvs(object):
 		done={}
 		train=builder.get_object('chk_path_train').get_active()
 		if train:
-			self.tempfile=tempfile.TemporaryFile()
+			self.tempfile=mktemp('/tmp/gbsdconv.score.XXXXXX')
+			os.unlink(self.tempfile[1])
 			self.trainer=Bsdconv('LOCALE:HALF:LOWER:ZH_FUZZY_TW:SCORE_TRAIN:NULL')
-			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile, 0)
+			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
 		for c in cs:
 			if c in done:
 				continue
@@ -128,7 +128,7 @@ class Bsdconvs(object):
 				self.conversions=[Bsdconv('BYTE:BYTE')]
 			else:
 				if train:
-					h2.ctl(CTL_ATTACH_SCORE, self.tempfile, 0)
+					h2.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
 				self.conversions.append(h1)
 				self.evaluaters.append(h2)
 
@@ -150,10 +150,11 @@ class Bsdconvs(object):
 
 	def score_clear(self):
 		if self.trainer:
-			self.tempfile=tempfile.TemporaryFile()
-			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile, 0)
+			self.tempfile=mktemp("/tmp/gbsdconv.score.XXXXXX")
+			os.unlink(self.tempfile[1])
+			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
 			for c in self.evaluaters:
-				c.ctl(CTL_ATTACH_SCORE, self.tempfile, 0)
+				c.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
 
 	def conv(self, s):
 		self.cinfo=None
