@@ -10,7 +10,8 @@ gbsdconv_taglib: taglib/tag_c.cpp
 install:
 	install -m 755 gbsdconv ${PREFIX}/bin
 	install -m 444 gbsdconv_taglib.so ${PREFIX}/lib
-	install -m 444 gbsdconv.png gbsdconv.xml gbsdconv2.png ${PREFIX}/share
+	mkdir -p ${PREFIX}/share/gbsdconv
+	install -m 444 gbsdconv.png gbsdconv.xml gbsdconv2.png ${PREFIX}/share/gbsdconv
 
 clean:
 	rm -f gbsdconv_taglib.so
