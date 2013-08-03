@@ -119,7 +119,7 @@ class Bsdconvs(object):
 				continue
 			done[c]=1
 			c1=c.replace(':SCORE:',':')
-			c2=c.replace(':SCORE:',':HALF:LOWER:ZH_FUZZY_TW:SCORE:')
+			c2=c.replace(':SCORE:',':HALF:LOWER:ZH_FUZZY_TW:SCORE:COUNT:')
 			h1=Bsdconv(c1)
 			h2=Bsdconv(c2)
 			if not h1 or not h2:
@@ -142,7 +142,11 @@ class Bsdconvs(object):
 		return ';'.join([x.split('"')[1] for x in [str(x) for x in self.conversions]])
 
 	def weighted_score(self, i):
-		return float(builder.get_object('factor_ierr').get_text())*i['ierr']+float(builder.get_object('factor_oerr').get_text())*i['oerr']+float(builder.get_object('factor_score').get_text())*i['score']
+		ierr=i.get("IERR", 0)
+		oerr=i.get("OERR", 0)
+		score=i.get("SCORE", 0)
+		count=i.get("COUNT", 0)
+		return float(score - (ierr + oerr) * 10) / float(count)
 
 	def score_train(self, s):
 		if self.trainer:
@@ -160,7 +164,7 @@ class Bsdconvs(object):
 		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv(s)
-			score=self.weighted_score(c.info())
+			score=self.weighted_score(c.counter())
 			if k==0:
 				self.lastc=0
 				max_score=score
@@ -174,8 +178,8 @@ class Bsdconvs(object):
 			score=0
 			for s in a:
 				c.testconv(s)
-				i=c.info()
-				score+=self.weighted_score(c.info())
+				i=c.counter()
+				score+=self.weighted_score(c.counter())
 			if k==0:
 				self.lastc=0
 				max_score=score
@@ -186,9 +190,9 @@ class Bsdconvs(object):
 		for k,s in enumerate(a):
 			ret.append(self.conversions[self.lastc].conv(s))
 			if k==0:
-				self.cinfo=self.conversions[self.lastc].info()
+				self.cinfo=self.conversions[self.lastc].counter()
 			else:
-				n=self.conversions[self.lastc].info()
+				n=self.conversions[self.lastc].counter()
 				self.cinfo={x:n[x]+self.cinfo[x] for x in n}
 		return ret
 
@@ -196,7 +200,7 @@ class Bsdconvs(object):
 		self.cinfo=None
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(ifile)
-			score=self.weighted_score(c.info())
+			score=self.weighted_score(c.counter())
 			if k==0:
 				self.lastc=0
 				max_score=score
@@ -205,24 +209,24 @@ class Bsdconvs(object):
 				max_score=score
 		self.conversions[self.lastc].conv_file(ifile, ofile)
 		return
-		
+
 	def testconv_file(self, str):
 		for k,c in enumerate(self.evaluaters):
 			c.testconv_file(str)
-			score=self.weighted_score(c.info())
+			score=self.weighted_score(c.counter())
 			if k==0:
 				self.lastc=0
 				max_score=score
 			elif score>max_score:
 				self.lastc=k
 				max_score=score
-		self.cinfo=self.evaluaters[self.lastc].info()
+		self.cinfo=self.evaluaters[self.lastc].counter()
 		return
 
 	def info(self):
 		if self.cinfo:
 			return self.cinfo
-		return self.conversions[self.lastc].info()
+		return self.conversions[self.lastc].counter()
 
 	def error(self):
 		return self.errorstr
@@ -429,7 +433,7 @@ class gBsdConv(object):
 		elif obj.get_label()=="Select":
 			self.item_toggle_cb_r(iter, 1)
 		elif obj.get_label()=="Deselect":
-			self.item_toggle_cb_r(iter, 0)	
+			self.item_toggle_cb_r(iter, 0)
 
 	def item_toggle_cb_r(self, parent, v):
 		iter = items.iter_children(parent)
@@ -675,7 +679,7 @@ class gBsdConv(object):
 		}
 		conversion.set_text('%s%s%s' % (conversion.get_text(), op[self.last_add], self.from_codecs[iter][0]))
 		self.last_add='from'
-		
+
 	def inter_add_cb(self, obj):
 		iter=builder.get_object('inter_codecs').get_active_iter()
 		conversion=builder.get_object("conversion")
@@ -771,7 +775,7 @@ class gBsdConv(object):
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
 		o.set_text(cnt)
 		o.set_text(self.utf8er.conv(self.converter.conv(cnt)))
-		info=self.converter.info()
+		info=self.converter.counter()
 		self.set_status('ierr:%d oerr:%d' % (info['ierr'], info['oerr']))
 
 	#+Naming
@@ -836,7 +840,7 @@ class gBsdConv(object):
 				newname=self.converter.conv(item.name0)
 				item.name2=newname
 				item.name1=item.name2
-				info=self.converter.info()
+				info=self.converter.counter()
 				if info['ierr']+info['oerr']>0:
 					item.error_counter=str(info['ierr']+info['oerr'])
 					self.err_counter_selected+=1
@@ -942,7 +946,7 @@ class gBsdConv(object):
 		item=Item(iter)
 		if item.selected:
 			item.selected=0
-			
+
 		else:
 			item.selected=1
 		self.naming_cb_r(items.iter_parent(iter))
@@ -951,7 +955,7 @@ class gBsdConv(object):
 		self.counter=0
 		self.naming_convert_r(None)
 		self.set_status('%d dirs/files converted' % self.counter)
-		
+
 	def naming_convert_r(self, parent):
 		curr = items.iter_children(parent)
 		while curr != None:
@@ -1044,7 +1048,7 @@ class gBsdConv(object):
 			item.content_info=''
 			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
-				i=self.converter.info()
+				i=self.converter.counter()
 				err=i['ierr']+i['oerr']
 				if err>0:
 					item.content_info=str(err)
@@ -1059,7 +1063,7 @@ class gBsdConv(object):
 		self.counter=0
 		self.content_convert_r(None)
 		self.set_status('%d files converted' % self.counter)
-		
+
 	def content_convert_r(self, parent):
 		curr = items.iter_children(parent)
 		while curr != None:
@@ -1153,7 +1157,7 @@ class gBsdConv(object):
 						taglib.taglib_tag_free_strings()
 
 					taglib.taglib_file_free(mfile)
-					info=self.converter.info()
+					info=self.converter.counter()
 					err=info['ierr']+info['oerr']
 					if err>0:
 						item.metatag_info=str(err)
@@ -1231,7 +1235,7 @@ class gBsdConv(object):
 		self.counter=0
 		self.metatag_convert_r(None)
 		self.set_status('%d files converted' % self.counter)
-		
+
 	def metatag_convert_r(self, parent):
 		curr = items.iter_children(parent)
 		while curr != None:
