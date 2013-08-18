@@ -223,7 +223,7 @@ class Bsdconvs(object):
 		self.cinfo=self.evaluaters[self.lastc].counter()
 		return
 
-	def info(self):
+	def counter(self):
 		if self.cinfo:
 			return self.cinfo
 		return self.conversions[self.lastc].counter()
@@ -776,7 +776,7 @@ class gBsdConv(object):
 		o.set_text(cnt)
 		o.set_text(self.utf8er.conv(self.converter.conv(cnt)))
 		info=self.converter.counter()
-		self.set_status('ierr:%d oerr:%d' % (info['ierr'], info['oerr']))
+		self.set_status('ierr:%d oerr:%d' % (info['IERR'], info['OERR']))
 
 	#+Naming
 	def operation_naming_tab_init(self):
@@ -841,8 +841,8 @@ class gBsdConv(object):
 				item.name2=newname
 				item.name1=item.name2
 				info=self.converter.counter()
-				if info['ierr']+info['oerr']>0:
-					item.error_counter=str(info['ierr']+info['oerr'])
+				if info['IERR']+info['OERR']>0:
+					item.error_counter=str(info['IERR']+info['OERR'])
 					self.err_counter_selected+=1
 				if newname in pool:
 					item.collision='C'
@@ -1049,7 +1049,7 @@ class gBsdConv(object):
 			if item.selected>=0 and os.path.isfile(fullpath) and (not builder.get_object('chk_content_ignore_nontext').get_active() or self.filter_match(item, self.text_extensions)):
 				self.converter.testconv_file(fullpath)
 				i=self.converter.counter()
-				err=i['ierr']+i['oerr']
+				err=i['IERR']+i['OERR']
 				if err>0:
 					item.content_info=str(err)
 					self.err_counter+=1
@@ -1158,7 +1158,7 @@ class gBsdConv(object):
 
 					taglib.taglib_file_free(mfile)
 					info=self.converter.counter()
-					err=info['ierr']+info['oerr']
+					err=info['IERR']+info['OERR']
 					if err>0:
 						item.metatag_info=str(err)
 						self.err_counter+=1
