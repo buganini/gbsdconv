@@ -112,14 +112,14 @@ class Bsdconvs(object):
 		if train:
 			self.tempfile=mktemp('/tmp/gbsdconv.score.XXXXXX')
 			os.unlink(self.tempfile[1])
-			self.trainer=Bsdconv('LOCALE:HALF:LOWER:ZH_FUZZY_TW:SCORE_TRAIN:NULL')
+			self.trainer=Bsdconv('LOCALE:HALF:LOWER:ZH-FUZZY-TW:SCORE-TRAIN:NULL')
 			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
 		for c in cs:
 			if c in done:
 				continue
 			done[c]=1
 			c1=c.replace(':SCORE:',':')
-			c2=c.replace(':SCORE:',':HALF:LOWER:ZH_FUZZY_TW:SCORE:COUNT:')
+			c2=c.replace(':SCORE:',':HALF:LOWER:ZH-FUZZY-TW:SCORE:COUNT:')
 			h1=Bsdconv(c1)
 			h2=Bsdconv(c2)
 			if not h1 or not h2:
@@ -590,14 +590,14 @@ class gBsdConv(object):
 		for codec in codecs:
 			self.to_codecs.append([codec])
 
-		self.profiles.append(['Chineses Simplified -> Traditional','utf-8:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;gbk:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['Chineses Simplified -> Traditional','utf-8:score:whitespace-derail:zhtw:zhtw-words:whitespace-rerail:utf-8;gbk:score:whitespace-derail:zhtw:zhtw-words:whitespace-rerail:utf-8'])
 		self.profiles.append(['Chineses Traditional -> Simplified','utf-8:score:zhcn:utf-8;big5:score:zhcn:utf-8'])
 		self.profiles.append(['China','utf-8:score:zhcn:utf-8;gbk:score:zhcn:utf-8'])
 		self.profiles.append(['West Europe','utf-8:score:utf-8;cp1252:score:utf-8'])
 		self.profiles.append(['Japan','utf-8:score:utf-8;shift-jis:score:utf-8;jis:score:utf-8'])
 		self.profiles.append(['Korea','utf-8:score:utf-8;cp949:score:utf-8'])
 		self.profiles.append(['Russia','utf-8:score:utf-8;cp1251:score:utf-8'])
-		self.profiles.append(['Taiwan','utf-8:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8;big5:score:whitespace-derail:zhtw:zhtw_words:whitespace-rerail:utf-8'])
+		self.profiles.append(['Taiwan','utf-8:score:whitespace-derail:zhtw:zhtw-words:whitespace-rerail:utf-8;big5:score:whitespace-derail:zhtw:zhtw-words:whitespace-rerail:utf-8'])
 		self.profiles.append(['Thailand','utf-8:score:utf-8;cp874:score:utf-8'])
 
 		from_codecs=builder.get_object('from_codecs')
