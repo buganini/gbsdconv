@@ -146,6 +146,8 @@ class Bsdconvs(object):
 		oerr=i.get("OERR", 0)
 		score=i.get("SCORE", 0)
 		count=i.get("COUNT", 0)
+		if count==0:
+			return 0
 		return float(score - (ierr + oerr) * 10) / float(count)
 
 	def score_train(self, s):
