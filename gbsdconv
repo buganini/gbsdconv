@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- Copyright (c) 2011 Kuan-Chung Chiu <buganini@gmail.com>
+ Copyright (c) 2011-2013 Kuan-Chung Chiu <buganini@gmail.com>
 
  Permission to use, copy, modify, and distribute this software for any
  purpose with or without fee is hereby granted, provided that the above
@@ -18,7 +18,7 @@
 
 import os
 import sys
-from bsdconv import *
+from bsdconv import Bsdconv
 from ctypes import *
 from gi.repository import Gtk, Gdk
 
@@ -123,7 +123,7 @@ class Bsdconvs(object):
 			h1=Bsdconv(c1)
 			h2=Bsdconv(c2)
 			if not h1 or not h2:
-				self.errorstr=error()
+				self.errorstr=Bsdconv.error()
 				self.failed=True
 				self.conversions=[Bsdconv('BYTE:BYTE')]
 			else:
@@ -579,15 +579,15 @@ class gBsdConv(object):
 		self.profiles = Gtk.ListStore(str, str)
 		self.fitting_algo = Gtk.ListStore(str, str)
 
-		codecs=codecs_list(FROM)
+		codecs=Bsdconv.codecs_list(Bsdconv.FROM)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.from_codecs.append([codec])
-		codecs=codecs_list(INTER)
+		codecs=Bsdconv.codecs_list(Bsdconv.INTER)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.inter_codecs.append([codec])
-		codecs=codecs_list(TO)
+		codecs=Bsdconv.codecs_list(Bsdconv.TO)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.to_codecs.append([codec])
