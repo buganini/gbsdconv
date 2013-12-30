@@ -772,6 +772,10 @@ class gBsdConv(object):
 		self.text_cb()
 
 	def text_cb(self, obj1=None, obj2=None):
+		mtime=(self.converter_mtime, self.operation_text_origin_mtime)
+		if self.operation_text_result_mtime==mtime:
+			return
+		self.operation_text_result_mtime=mtime
 		i=builder.get_object("text_origin").get_buffer()
 		o=builder.get_object("text_result").get_buffer()
 		cnt = i.get_text(i.get_start_iter(), i.get_end_iter(), 0)
