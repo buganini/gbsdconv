@@ -579,15 +579,15 @@ class gBsdConv(object):
 		self.profiles = Gtk.ListStore(str, str)
 		self.fitting_algo = Gtk.ListStore(str, str)
 
-		codecs=Bsdconv.codecs_list(Bsdconv.FROM)
+		codecs=Bsdconv.modules_list(Bsdconv.FROM)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.from_codecs.append([codec])
-		codecs=Bsdconv.codecs_list(Bsdconv.INTER)
+		codecs=Bsdconv.modules_list(Bsdconv.INTER)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.inter_codecs.append([codec])
-		codecs=Bsdconv.codecs_list(Bsdconv.TO)
+		codecs=Bsdconv.modules_list(Bsdconv.TO)
 		codecs.sort(self._cmp)
 		for codec in codecs:
 			self.to_codecs.append([codec])
