@@ -12,4 +12,4 @@ GUI for bsdconv
 	http://buganini.github.com/gbsdconv/
 
 #Todo
-	refactor to be able to use gtk/qt/curse based ui with same code
+	refactor to be able to use gtk/qt/curse based ui with the same core
