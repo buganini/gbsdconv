@@ -19,219 +19,9 @@
 import os
 import sys
 from bsdconv import Bsdconv
-from ctypes import *
 from gi.repository import Gtk, Gdk
-
-taglib=CDLL('gbsdconv_taglib.so')
-
-taglib.taglib_file_new.argtypes=[c_char_p]
-taglib.taglib_file_new.restype=c_void_p
-
-taglib.taglib_file_is_valid.argtypes=[c_void_p]
-taglib.taglib_file_is_valid.restype=c_int
-
-taglib.taglib_file_save.argtypes=[c_void_p]
-taglib.taglib_file_save.restype=c_int
-
-taglib.taglib_file_free.argtypes=[c_void_p]
-
-taglib.taglib_mpeg_file.argtypes=[c_void_p]
-taglib.taglib_mpeg_file.restype=c_void_p
-
-taglib.taglib_mpeg_file_save3.argtypes=[c_void_p, c_int, c_bool, c_int]
-taglib.taglib_mpeg_file_save3.restype=c_bool
-
-taglib.taglib_mpeg_file_strip.argtypes=[c_void_p, c_int]
-taglib.taglib_mpeg_file_strip.restype=c_bool
-
-taglib.taglib_file_tag.argtypes=[c_void_p]
-taglib.taglib_file_tag.restype=c_void_p
-
-taglib.taglib_tag_title.argtypes=[c_void_p]
-taglib.taglib_tag_title.restype=c_char_p
-
-taglib.taglib_tag_artist.argtypes=[c_void_p]
-taglib.taglib_tag_artist.restype=c_char_p
-
-taglib.taglib_tag_album.argtypes=[c_void_p]
-taglib.taglib_tag_album.restype=c_char_p
-
-taglib.taglib_tag_comment.argtypes=[c_void_p]
-taglib.taglib_tag_comment.restype=c_char_p
-
-taglib.taglib_tag_genre.argtypes=[c_void_p]
-taglib.taglib_tag_genre.restype=c_char_p
-
-taglib.taglib_tag_year.argtypes=[c_void_p]
-taglib.taglib_tag_year.restype=c_uint
-
-taglib.taglib_tag_track.argtypes=[c_void_p]
-taglib.taglib_tag_track.restype=c_uint
-
-taglib.taglib_tag_set_title.argtypes=[c_void_p, c_char_p]
-taglib.taglib_tag_set_artist.argtypes=[c_void_p, c_char_p]
-taglib.taglib_tag_set_album.argtypes=[c_void_p, c_char_p]
-taglib.taglib_tag_set_comment.argtypes=[c_void_p, c_char_p]
-taglib.taglib_tag_set_genre.argtypes=[c_void_p, c_char_p]
-
-
-items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
-attr_map={
-	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
-	'name0':	1,
-	'name2':	2,	#used by naming operation
-	'name1':	3,	#name2 or name0 if there are duplication or collision
-	'uname0':	4,	#utf8er(name0)
-	'uname1':	5,	#utf8er(name1)
-	'lname0':	6,	#utf8er(name0 + target0)
-	'lname1':	7,	#utf8er(name1 + target1)
-	'uname2':	8,	#utf8er(name2) (unused)
-	'error_counter':9,
-	'collision':	10,
-	'duplication':	11,
-	'target0':	12,	#symlink target0
-	'target1':	13,	#symlink target1
-	'naming_info':	14,
-	'content_info':	15,
-	'metatag_info':	16,
-}
-
-class Bsdconvs(object):
-	def __init__(self, conversion):
-		cs=conversion.upper().strip(',:|;').split(';')
-		self.failed=False
-		self.conversions=[]
-		self.evaluaters=[]
-		self.trainer=None
-		self.cache={}
-		self.lastc=0
-		self.cinfo=None
-		self.tempfile=None
-		done={}
-		train=builder.get_object('chk_path_train').get_active()
-		if train:
-			self.tempfile=mktemp('/tmp/gbsdconv.score.XXXXXX')
-			os.unlink(self.tempfile[1])
-			self.trainer=Bsdconv('LOCALE:HALF:LOWER:ZH-FUZZY-TW:SCORE-TRAIN:NULL')
-			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
-		for c in cs:
-			if c in done:
-				continue
-			done[c]=1
-			c1=c.replace(':SCORE:',':')
-			c2=c.replace(':SCORE:',':HALF:LOWER:ZH-FUZZY-TW:SCORE:COUNT:')
-			h1=Bsdconv(c1)
-			h2=Bsdconv(c2)
-			if not h1 or not h2:
-				self.errorstr=Bsdconv.error()
-				self.failed=True
-				self.conversions=[Bsdconv('BYTE:BYTE')]
-			else:
-				if train:
-					h2.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
-				self.conversions.append(h1)
-				self.evaluaters.append(h2)
-
-	def __bool__(self):
-		return not self.failed
-
-	def __nonzero__(self):
-		return self.__bool__()
-
-	def __str__(self):
-		return ';'.join([x.split('"')[1] for x in [str(x) for x in self.conversions]])
-
-	def weighted_score(self, i):
-		ierr=i.get("IERR", 0)
-		oerr=i.get("OERR", 0)
-		score=i.get("SCORE", 0)
-		count=i.get("COUNT", 0)
-		if count==0:
-			return 0
-		return float(score - (ierr + oerr) * 10) / float(count)
-
-	def score_train(self, s):
-		if self.trainer:
-			self.trainer.testconv(s)
-
-	def score_clear(self):
-		if self.trainer:
-			self.tempfile=mktemp("/tmp/gbsdconv.score.XXXXXX")
-			os.unlink(self.tempfile[1])
-			self.trainer.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
-			for c in self.evaluaters:
-				c.ctl(CTL_ATTACH_SCORE, self.tempfile[0], 0)
-
-	def conv(self, s):
-		self.cinfo=None
-		for k,c in enumerate(self.evaluaters):
-			c.testconv(s)
-			score=self.weighted_score(c.counter())
-			if k==0:
-				self.lastc=0
-				max_score=score
-			elif score>max_score:
-				self.lastc=k
-				max_score=score
-		return self.conversions[self.lastc].conv(s)
-
-	def conv_list(self, a):
-		for k,c in enumerate(self.evaluaters):
-			score=0
-			for s in a:
-				c.testconv(s)
-				i=c.counter()
-				score+=self.weighted_score(c.counter())
-			if k==0:
-				self.lastc=0
-				max_score=score
-			elif score>max_score:
-				self.lastc=k
-				max_score=score
-		ret=[]
-		for k,s in enumerate(a):
-			ret.append(self.conversions[self.lastc].conv(s))
-			if k==0:
-				self.cinfo=self.conversions[self.lastc].counter()
-			else:
-				n=self.conversions[self.lastc].counter()
-				self.cinfo={x:n[x]+self.cinfo[x] for x in n}
-		return ret
-
-	def conv_file(self, ifile, ofile):
-		self.cinfo=None
-		for k,c in enumerate(self.evaluaters):
-			c.testconv_file(ifile)
-			score=self.weighted_score(c.counter())
-			if k==0:
-				self.lastc=0
-				max_score=score
-			elif score>max_score:
-				self.lastc=k
-				max_score=score
-		self.conversions[self.lastc].conv_file(ifile, ofile)
-		return
-
-	def testconv_file(self, str):
-		for k,c in enumerate(self.evaluaters):
-			c.testconv_file(str)
-			score=self.weighted_score(c.counter())
-			if k==0:
-				self.lastc=0
-				max_score=score
-			elif score>max_score:
-				self.lastc=k
-				max_score=score
-		self.cinfo=self.evaluaters[self.lastc].counter()
-		return
-
-	def counter(self):
-		if self.cinfo:
-			return self.cinfo
-		return self.conversions[self.lastc].counter()
-
-	def error(self):
-		return self.errorstr
+from taglib import taglib
+from bsdconvs import Bsdconvs
 
 class Item(object):
 	def __init__(self, iter):
@@ -256,6 +46,27 @@ class Item(object):
 			self.item[attr_map[key]]=value
 		else:
 			super(Item, self).__setattr__(key, value)
+
+items = Gtk.TreeStore(int, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str, str)
+attr_map={
+	'selected':	0,	#0=no, 1=yes, -1=not_in_zone
+	'name0':	1,
+	'name2':	2,	#used by naming operation
+	'name1':	3,	#name2 or name0 if there are duplication or collision
+	'uname0':	4,	#utf8er(name0)
+	'uname1':	5,	#utf8er(name1)
+	'lname0':	6,	#utf8er(name0 + target0)
+	'lname1':	7,	#utf8er(name1 + target1)
+	'uname2':	8,	#utf8er(name2) (unused)
+	'error_counter':9,
+	'collision':	10,
+	'duplication':	11,
+	'target0':	12,	#symlink target0
+	'target1':	13,	#symlink target1
+	'naming_info':	14,
+	'content_info':	15,
+	'metatag_info':	16,
+}
 
 class gBsdConv(object):
 	def __init__(self):
@@ -288,7 +99,7 @@ class gBsdConv(object):
 		self.err_counter_selected = 0
 		self.collision = 0
 		self.duplication = 0
-		self.converter = Bsdconvs("")
+		self.converter = Bsdconvs("", builder.get_object('chk_path_train').get_active())
 
 		self.inter_codecs = {}
 
@@ -754,7 +565,7 @@ class gBsdConv(object):
 
 	def conversion_apply_cb(self, obj):
 		self.converter_mtime+=1
-		self.converter = Bsdconvs(builder.get_object("conversion").get_text())
+		self.converter = Bsdconvs(builder.get_object("conversion").get_text(), builder.get_object('chk_path_train').get_active())
 		if self.converter:
 			self.set_status(str(self.converter))
 		else:
