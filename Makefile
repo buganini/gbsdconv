@@ -1,19 +1,14 @@
-DESTDIR?=
-PREFIX?=/usr/local
-LOCALBASE?=${PREFIX}
+PYTHON?=python3
 
-LIBS=-L${LOCALBASE}/lib -ltag
-
-all: gbsdconv_taglib
-
-gbsdconv_taglib: taglib/tag_c.cpp
-	$(CXX) -I${LOCALBASE}/include/taglib -fPIC -shared -o gbsdconv_taglib.so taglib/tag_c.cpp ${LIBS}
+all:
+	$(PYTHON) setup.py build_ext --inplace
 
 install:
-	install -m 755 gbsdconv ${DESTDIR}${PREFIX}/bin
-	install -m 444 gbsdconv_taglib.so ${DESTDIR}${PREFIX}/lib
-	mkdir -p ${DESTDIR}${PREFIX}/share/gbsdconv
-	install -m 444 gbsdconv.png gbsdconv.xml gbsdconv2.png ${DESTDIR}${PREFIX}/share/gbsdconv
+	$(PYTHON) -m pip install .
+
+check:
+	QT_QPA_PLATFORM=offscreen $(PYTHON) -m unittest discover -s tests -v
 
 clean:
-	rm -f gbsdconv_taglib.so
+	rm -rf build
+	rm -f src/_taglib*.so src/_taglib*.pyd

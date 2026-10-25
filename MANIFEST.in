@@ -1,0 +1,4 @@
+include taglib/tag_c.h
+include taglib/tag_c.cpp
+recursive-include tests *.py
+include Makefile
