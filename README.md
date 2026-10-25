@@ -3,6 +3,21 @@
 A GUI for the [bsdconv](https://github.com/buganini/bsdconv) encoding converter,
 written with [PUI](https://github.com/buganini/PUI) and its PySide6 backend.
 
+## Features
+
+- **Multi-conversions:** evaluate multiple conversion candidates and select the
+  best result using configurable error and language scores.
+- **Text conversion:** convert pasted text, preview the result, and copy or save
+  the output.
+- **Text file conversion:** convert file contents in batches with streaming and
+  optional backups.
+- **File path conversion:** preview and rename files and folders, including
+  selected symlink targets.
+- **Multimedia metadata conversion:** preview and convert media tags through
+  the optional TagLib bridge.
+- **Conversion helpers:** regional profiles, codec chains, URL decoding, and
+  mojibake repair.
+
 ## Requirements
 
 - Python 3.10–3.14 and a platform supported by PySide6. Python 2 is not supported.
