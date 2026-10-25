@@ -1,4 +1,4 @@
-"""PUI subviews for the six application tabs."""
+"""PUI subviews for conversion settings and operations."""
 from .text import TextView
 from .files import FilesView
 from .conversion import ConversionView

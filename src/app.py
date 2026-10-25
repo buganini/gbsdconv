@@ -70,7 +70,8 @@ class Application(BaseApplication):
             setattr(self.state, 'tag_' + field, True)
         self.state.status = 'Ready — select a conversion, then preview the result.'
         self.state.busy, self.state.revision = False, 0
-        self.state.tab = 'text'
+        self.state.conversion_type = 'Text'
+        self.state.tab = 'conversion'
         self.paths = ops.collect_paths(paths) if paths else []
         self.checked = set(self.paths)
         self.names = []
@@ -101,18 +102,23 @@ class Application(BaseApplication):
                     TextField(self.state('expression'), self.state('expression'), placeholder='UTF-8:UTF-8;BIG5:UTF-8').input(self.invalidate).layout(weight=1)
                     Button('Validate', disabled=self.state.busy).click(self.validate)
                 with Tabs(model=self.state('tab')).layout(weight=1):
-                    with Tab('Text').id('text'):
-                        TextView(self)
-                    with Tab('Files').id('files'):
-                        FilesView(self)
-                    with Tab('Conversion').id('conversion'):
+                    with Tab('Setup').id('conversion'):
                         ConversionView(self)
-                    with Tab('Filenames').id('names'):
-                        FilenamesView(self)
-                    with Tab('File contents').id('contents'):
-                        ContentsView(self)
-                    with Tab('Media tags').id('tags'):
-                        TagsView(self)
+                    if self.state.conversion_type == 'Text':
+                        with Tab('Text').id('text'):
+                            TextView(self)
+                    else:
+                        with Tab('Select Files').id('files'):
+                            FilesView(self)
+                        if self.state.conversion_type == 'File Names':
+                            with Tab('File Names').id('names'):
+                                FilenamesView(self)
+                        elif self.state.conversion_type == 'File Contents':
+                            with Tab('File Contents').id('contents'):
+                                ContentsView(self)
+                        elif self.state.conversion_type == 'Media Tags':
+                            with Tab('Media Tags').id('tags'):
+                                TagsView(self)
                 Divider()
                 Label(('Working…  ' if self.state.busy else '') + self.state.status)
 
@@ -367,7 +373,7 @@ class Application(BaseApplication):
         paths = [path for path in sorted(self.checked) if os.path.isfile(path) and not os.path.islink(path)
                  and Path(path).suffix.lower() in MEDIA_EXTENSIONS]
         if not paths:
-            self.state.status = 'Select media files on the Files tab.'
+            self.state.status = 'Select media files on the Select Files tab.'
             return
         config, options = self.config(), self.tag_options()
         save_options = self.state.backup, self.state.id3v23, self.state.remove_id3v1

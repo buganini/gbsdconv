@@ -71,23 +71,28 @@ Run `gbsdconv [file-or-folder ...]`, or use `python gbsdconv` from this checkout
 
 ## Using the interface
 
+The **Setup** tab comes first. Its **Conversion type** menu defaults to
+**Text**, showing only the Setup and Text tabs. Select **File Names**,
+**File Contents**, or **Media Tags** to show **Select Files** and the matching
+operation tab instead. Switching types preserves entered text and file selections.
+
 The conversion expression at the top applies to all conversion pages. Use the
-**Conversion** page to choose a regional profile, build a codec chain, adjust
+**Setup** page to choose a regional profile, build a codec chain, adjust
 scoring weights, or construct URL decoding and mojibake repair expressions.
 Semicolon-separated candidates are evaluated automatically; `:SCORE:` enables
 language scoring. Filename training uses temporary score data.
 
 - **Text:** convert pasted UTF-8 text, copy the preview, or save the exact output
   bytes. Set the preview encoding when the output is not UTF-8.
-- **Files:** add files or recursively collect a folder, select by type or glob,
+- **Select Files:** add files or recursively collect a folder, select by type or glob,
   and choose the focused file. Removing an item only removes it from the list.
-- **Filenames:** preview selected names and symlink targets, then apply the
+- **File Names:** preview selected names and symlink targets, then apply the
   preview. Children are renamed before parent folders. Existing destinations,
   conversion errors and changed files prevent application.
-- **File contents:** preview the focused file or convert selected files. The
+- **File Contents:** preview the focused file or convert selected files. The
   preview is limited to 1 MiB; conversion streams the complete file. The default
   filter includes only text file extensions.
-- **Media tags:** preview and convert selected title, artist, album, comment and
+- **Media Tags:** preview and convert selected title, artist, album, comment and
   genre fields. Year and track are preserved. Latin-1 mojibake recovery,
   comment clearing and MP3 ID3 options are available. Output must be UTF-8.
 

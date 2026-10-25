@@ -25,4 +25,4 @@ class FilenamesView(PUIView):
                     TableNode(ops.display(row.destination + suffix))
                     TableNode(row.error or ('Ready' if row.changed else 'Unchanged'))
         if not self.app.names:
-            Label('Select items on the Files tab, then preview their converted names here.')
+            Label('Select items on the Select Files tab, then preview their converted names here.')
