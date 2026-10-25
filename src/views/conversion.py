@@ -14,9 +14,8 @@ class ConversionView(PUIView):
         _ = self.state.revision
         with HBox():
             Label('Conversion type')
-            with ComboBox(text_model=self.state('conversion_type'), disabled=self.state.busy):
-                for name in ('Text', 'File Names', 'File Contents', 'Media Tags'):
-                    ComboBoxItem(name)
+            for name in ('Text', 'File Names', 'File Contents', 'Media Tags'):
+                RadioButton(name, name, self.state('conversion_type'), disabled=self.state.busy)
         Divider()
         Label('Profiles · semicolon-separated candidates are scored automatically')
         with HBox():

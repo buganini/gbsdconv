@@ -49,18 +49,23 @@ class UITests(unittest.TestCase):
 
         def select_type(value, operation):
             select_tab('Setup')
-            selector = next(combo for combo in app.window.ui.findChildren(QtWidgets.QComboBox)
-                            if combo.count() == 4 and combo.itemText(0) == 'Text')
-            self.assertEqual([selector.itemText(i) for i in range(selector.count())],
+            radios = app.window.ui.findChildren(QtWidgets.QRadioButton)
+            self.assertEqual([radio.text() for radio in radios],
                              ['Text', 'File Names', 'File Contents', 'Media Tags'])
-            selector.setCurrentText(value)
+            selector = next(radio for radio in radios if radio.text() == value)
+            self.assertTrue(selector.isEnabled())
+            QtTest.QTest.mouseClick(selector, QtCore.Qt.MouseButton.LeftButton,
+                                   pos=QtCore.QPoint(10, selector.height() // 2))
             settle()
+            self.assertEqual([radio.text() for radio in radios if radio.isChecked()], [value])
             self.assertEqual(app.state.conversion_type, value)
             self.assertEqual(tab_labels(), ['Setup', operation] if value == 'Text'
                              else ['Setup', 'Select Files', operation])
             self.assertEqual(tabs.currentIndex(), 0)
 
         self.assertEqual(app.state.conversion_type, 'Text')
+        self.assertEqual([radio.text() for radio in app.window.ui.findChildren(QtWidgets.QRadioButton)
+                          if radio.isChecked()], ['Text'])
         self.assertEqual(tab_labels(), ['Setup', 'Text'])
         self.assertEqual(tabs.currentIndex(), 0)
         select_tab('Text')

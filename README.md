@@ -71,7 +71,7 @@ Run `gbsdconv [file-or-folder ...]`, or use `python gbsdconv` from this checkout
 
 ## Using the interface
 
-The **Setup** tab comes first. Its **Conversion type** menu defaults to
+The **Setup** tab comes first. Its **Conversion type** radio buttons default to
 **Text**, showing only the Setup and Text tabs. Select **File Names**,
 **File Contents**, or **Media Tags** to show **Select Files** and the matching
 operation tab instead. Switching types preserves entered text and file selections.
